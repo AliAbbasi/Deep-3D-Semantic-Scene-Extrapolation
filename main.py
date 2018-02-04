@@ -26,7 +26,7 @@ def main(_):
     run_config = tf.ConfigProto()
     run_config.gpu_options.allow_growth = True
     with tf.Session(config=run_config) as sess:
-        if FLAGS.dataset == "SEGAN":
+        if FLAGS.model == "SEGAN":
             pass
             # create SEGAN
         else:
