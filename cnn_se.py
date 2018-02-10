@@ -410,7 +410,7 @@ def show_result(sess) :
         
         scn     = np.concatenate(( trData , score ), axis=2 )
         
-        output = open( directory + "/" + test + ".ply" , 'w') 
+        output = open( directory + "/" + test[5:] + ".ply" , 'w') 
         ply       = ""
         numOfVrtc = 0
         for idx1 in range(26):
@@ -436,7 +436,7 @@ def show_result(sess) :
         output.write("end_header"                            + "\n")
         output.write( ply                                          ) 
         output.close()
-        print test + ".ply" + " is Done!"  
+        print test + ".ply" + " is Done!" 
     
     print ("A1: ", accu1, " A2:", accu2)    
 #===================================================================================================================================================
