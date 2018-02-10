@@ -10,6 +10,7 @@ import os, shutil, sys, datetime, glob
 to_train    = False
 to_restore  = True
 directory = "gan_se_directory"  
+data_directory = "data"  
 batch_size  = 100
 
 #=====================================================================================================================================================
@@ -246,7 +247,7 @@ def show_result(f_half_real, s_half_real, s_half_fake, batch_size, dataType):
     
     for i, item in enumerate(results):   
     
-        output    = open( directory + "/" + dataType + "_generated_" + str(i) + ".ply" , 'w') 
+        output    = open( data_directory + "/" + dataType + "_generated_" + str(i) + ".ply" , 'w') 
         ply       = ""
         numOfVrtc = 0
         
@@ -366,7 +367,7 @@ def train():
         saver.restore(sess, chkpt_fname)
         batch_arr = [] 
         bs        = 0
-        for npyFile in glob.glob('*.npy'): 
+        for npyFile in glob.glob(data_directory + '/*.npy'): 
             batch_arr.append( np.load(npyFile) )
             bs += 1
         batch_arr = np.reshape( batch_arr, ( bs, 60, 26, 30 ))    
@@ -379,7 +380,7 @@ def train():
         
         batch_arr = [] 
         bs        = 1
-        for npyFile in glob.glob('*.npy'): 
+        for npyFile in glob.glob(data_directory + '/*.npy'): 
             batch_arr.append( np.load(npyFile) ) 
             batch_arr = np.reshape( batch_arr, ( bs, 60, 26, 30 ))    
             batch_arr = batch_arr.transpose(0,2,3,1)                        # transpose to 26x30x60 
@@ -407,7 +408,7 @@ def train():
         
             print ("\r\n ----- This is the loop: " + str(aug_idx - 29) + " of augmentation loops. ----- \r\n")
             
-            for npyFile in glob.glob('*.npy'):  
+            for npyFile in glob.glob('/*.npy'):  
                 if counter < batch_size:    
                     scene = np.load(npyFile)      
                     temp  = np.zeros((75,26,30))  

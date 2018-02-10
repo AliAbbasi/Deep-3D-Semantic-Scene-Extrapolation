@@ -25,6 +25,7 @@ import tensorflow       as     tf
 to_train   = False
 to_restore = True
 directory  = 'cnn_se_directory'
+data_directory  = 'data'
 if not os.path.exists(directory):
     os.makedirs(directory)
     
@@ -365,7 +366,7 @@ def show_result(sess) :
     bs               = 0  
     trData, trLabel  = [], [] 
     batch_arr = []
-    for test in glob.glob('*.npy'): 
+    for test in glob.glob(data_directory + '/*.npy'): 
         scene = np.load(test)   
         #-----------------------------
         temp = np.zeros((26,30,60))
@@ -384,7 +385,7 @@ def show_result(sess) :
     accu1, accu2 = accuFun ( sess, trData, trLabel, bs )     
     print ("A1: ", accu1, " A2:", accu2)
     
-    for test in glob.glob('*.npy'): 
+    for test in glob.glob(data_directory + '/*.npy'): 
         scene = np.load(test)  
         trData, trLabel = [], [] 
         
