@@ -24,7 +24,7 @@ import tensorflow       as     tf
 
 to_train   = False
 to_restore = True
-directory  = 'v30-7'
+directory  = 'cnn_se_directory'
 if not os.path.exists(directory):
     os.makedirs(directory)
     
@@ -359,7 +359,7 @@ def show_result(sess) :
     colors.append(" 0  0 139 255")    # dark blue  for 9  'table'
     colors.append(" 255 255 0 255")   # yellow     for 10 'coffe table'
     colors.append(" 128 128 128 255") # gray       for 11 'shelves'
-    colors.append(" 0 100 0 255")     # dark green for 12 ' '
+    colors.append(" 0 100 0 255")     # dark green for 12 'cabinets'
     colors.append(" 255 165 0 255")   # orange     for 13 'furniture'  
  
     bs               = 0  
@@ -483,7 +483,7 @@ if __name__ == '__main__':
 
     input         = 30 * 26 * 30
     out           = 26 * 30 * 30  
-    logPath       = '/tmp/' + directory
+    # logPath       = '/tmp/' + directory
     x             = tf.placeholder(tf.float32, [ None, input ])
     y             = tf.placeholder(tf.int32  , [ None, out   ])   
     lr            = tf.placeholder(tf.float32                 )   
@@ -499,8 +499,8 @@ if __name__ == '__main__':
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess: 
     
         sess.run(initVar)
-        if os.path.exists(logPath):
-            shutil.rmtree(logPath)
+        # if os.path.exists(logPath):
+            # shutil.rmtree(logPath)
         # writer = tf.summary.FileWriter(logPath, sess.graph)
         
         # restore model weights
@@ -534,7 +534,7 @@ if __name__ == '__main__':
         accu1tr, accu2tr = 0, 0
         
         while(True):  
-            for axisX in range(30,40):  
+            for axisX in range(30,40):    # augmentation loop
             
                 print "\r\n ----- This is the loop: " + str(axisX - 29) + " of 10 augmentation loops. -----" 
                 saver.save(sess, directory + '/my-model') 

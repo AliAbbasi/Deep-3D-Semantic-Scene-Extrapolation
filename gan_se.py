@@ -1,14 +1,4 @@
 
-# input is first half, 
-# the goal is to generate the second half
-#     generate 26 * 30 * 30
-
-
-# architecture of v30 with softmax at the end and cross-entropy between ground truth
-# with a local Discriminator
-# with data augmentation
-# with another D as global
-
 #====================================================================================================================================================
 
 import tensorflow                          as     tf
@@ -98,9 +88,9 @@ G_W2  = tf.Variable(tf.truncated_normal( [ 1 , 1 , 128 , 256 ], stddev = 0.01 ))
 G_W3  = tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 128 ], stddev = 0.01 )) 
 G_W4  = tf.Variable(tf.truncated_normal( [ 1 , 1 , 128 , 128 ], stddev = 0.01 ))  
 
-G_W5  = tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 256 ], stddev = 0.01 ))   
+G_W5  = tf.Variable(tf.truncated_normal( [ 1 , 1 , 128 , 256 ], stddev = 0.01 ))   
 G_W6  = tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 256 ], stddev = 0.01 ))   
-G_W7  = tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 128 ], stddev = 0.01 )) 
+G_W7  = tf.Variable(tf.truncated_normal( [ 1 , 1 , 256 , 128 ], stddev = 0.01 )) 
   
 G_W8  = tf.Variable(tf.truncated_normal( [ 1 , 1 , 128 , 256 ], stddev = 0.01 ))   
 G_W9  = tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 256 ], stddev = 0.01 ))   
@@ -228,7 +218,7 @@ def show_result(f_half_real, s_half_real, s_half_fake, batch_size, dataType):
     colors.append(" 0  0 139 255")    # dark blue  for 9  'table'
     colors.append(" 255 255 0 255")   # yellow     for 10 'coffe table'
     colors.append(" 128 128 128 255") # gray       for 11 'shelves'
-    colors.append(" 0 100 0 255")     # dark green for 12 ' '
+    colors.append(" 0 100 0 255")     # dark green for 12 'cabinets'
     colors.append(" 255 165 0 255")   # orange     for 13 'furniture'  
     
     # real first half
@@ -441,7 +431,7 @@ def train():
                     if step < step_threshold:
                         sess.run(g_trainer,  feed_dict={g_labels: g_gt, batchSize: batch_size, f_half_real: batch_arr[:, :, :, aug_idx-30:aug_idx ], s_half_real: batch_arr[:, :, :, aug_idx:aug_idx+30],keep_prob: np.sum(0.5).astype(np.float32)})
 
-                    # -------------- update G & D ----------
+                    # -------------- update All --------------
                     if step > step_threshold:
                         sess.run(g_trainer,  feed_dict={g_labels: g_gt, batchSize: batch_size, f_half_real: batch_arr[:, :, :, aug_idx-30:aug_idx ], s_half_real: batch_arr[:, :, :, aug_idx:aug_idx+30], keep_prob: np.sum(0.5).astype(np.float32)})
                         sess.run(d_trainer,  feed_dict={g_labels: g_gt, batchSize: batch_size, f_half_real: batch_arr[:, :, :, aug_idx-30:aug_idx ], s_half_real: batch_arr[:, :, :, aug_idx:aug_idx+30], keep_prob: np.sum(0.5).astype(np.float32)})
