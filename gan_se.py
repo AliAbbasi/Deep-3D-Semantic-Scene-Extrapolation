@@ -247,7 +247,7 @@ def show_result(f_half_real, s_half_real, s_half_fake, batch_size, dataType):
     
     for i, item in enumerate(results):   
     
-        output    = open( data_directory + "/" + dataType + "_generated_" + str(i) + ".ply" , 'w') 
+        output    = open( data_directory + "/" + dataType[5:] + "_generated_" + str(i) + ".ply" , 'w') 
         ply       = ""
         numOfVrtc = 0
         
