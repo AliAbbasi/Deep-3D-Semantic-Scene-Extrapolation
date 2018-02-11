@@ -21,7 +21,6 @@ elif 'NYU' in argv_list:
 else:
     print("Error: Wrong Arguments.!")
     # sys.exit(0)
-
 if not os.path.exists(directory):
     os.makedirs(directory)
 
@@ -480,10 +479,10 @@ def accuFun(sess, trData, trLabel, batch_size):
 
 if __name__ == '__main__':
 
-    input = 26 * 30 * 30
-    out = 26 * 30 * 30
-    x = tf.placeholder(tf.float32, [None, input])
-    y = tf.placeholder(tf.int32, [None, out])
+    input_shape = 26 * 30 * 30
+    out_shape = 26 * 30 * 30
+    x = tf.placeholder(tf.float32, [None, input_shape])
+    y = tf.placeholder(tf.int32, [None, out_shape])
     lr = tf.placeholder(tf.float32)
     keepProb = tf.placeholder(tf.float32)
     batchSize = tf.placeholder(tf.int32)
@@ -497,6 +496,7 @@ if __name__ == '__main__':
 
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
 
+        sess.run(initVar)
         # restore model weights
         if to_restore:
             if os.path.exists(directory + '/my-model.meta'):
@@ -527,7 +527,7 @@ if __name__ == '__main__':
 
         accu1tr, accu2tr = 0, 0
 
-        while (True):
+        while True:
             for axisX in range(30, 40):
 
                 print("\r\n ----- This is the loop: " + str(axisX - 29) + " of 10 augmentation loops. -----")
