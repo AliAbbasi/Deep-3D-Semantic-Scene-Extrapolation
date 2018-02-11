@@ -24,8 +24,17 @@ import tensorflow       as     tf
 
 to_train   = False
 to_restore = True
+
 directory  = 'cnn_se_directory'
-data_directory  = 'data'
+
+argv_list = str(sys.argv)
+if argv_list[1] == 'SUNCG':
+    data_directory  = 'data/SUN'
+elif argv_list[1] == 'NYU':
+    data_directory  = 'data/NYU'
+else:
+    print("Error: Wrong Arguments.!")
+    
 if not os.path.exists(directory):
     os.makedirs(directory)
     
@@ -410,7 +419,7 @@ def show_result(sess) :
         
         scn     = np.concatenate(( trData , score ), axis=2 )
         
-        output = open( directory + "/" + test[5:] + ".ply" , 'w') 
+        output = open( directory + "/" + test[9:] + ".ply" , 'w') 
         ply       = ""
         numOfVrtc = 0
         for idx1 in range(26):
