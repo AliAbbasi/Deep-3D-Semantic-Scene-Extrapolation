@@ -5,13 +5,15 @@ Requirements:
     
 Clone all the files and directories to your machine,
 
-To run the CNN model do:
+To run the CNN model, on SUNCG and NYU dataset do:
 
-    python cnn_se.py
+    python cnn_se.py SUN 
+    python cnn_se.py NYU 
     
-To run the GAN model do:
-
-    python gan_se.py
+To run the GAN model, on SUNCG and NYU dataset do:
+ 
+    python gan_se.py SUN
+    python gan_se.py NYU
     
 These models after running will create ".ply" files in the "cnn_se_directory" and "gan_se_directory" respectively. Files with name included "NYU" show the scenes from NYU real scenes dataset and others show scenes from SUNCG synthetic scenes dataset.
 
