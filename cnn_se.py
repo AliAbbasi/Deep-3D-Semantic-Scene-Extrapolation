@@ -347,7 +347,7 @@ def show_result(sess) :
     print ("Creating ply files..."  )
     
     colors  = []  
-    colors.append(" 0 0 0 255  ")     # balck      for 0  'empty'
+    colors.append(" 0 0 0 255  ")     # black      for 0  'empty'
     colors.append(" 139 0 0 255")     # dark red   for 1  'ceiling'
     colors.append(" 0 128 0 255")     # green      for 2  'floor'
     colors.append(" 173 216 230 255") # light blue for 3  'wall'
@@ -357,7 +357,7 @@ def show_result(sess) :
     colors.append(" 210 180 140 255") # tan        for 7  'bed'
     colors.append(" 128 0   128 255") # purple     for 8  'sofa'
     colors.append(" 0  0 139 255")    # dark blue  for 9  'table'
-    colors.append(" 255 255 0 255")   # yellow     for 10 'coffe table'
+    colors.append(" 255 255 0 255")   # yellow     for 10 'coffee table'
     colors.append(" 128 128 128 255") # gray       for 11 'shelves'
     colors.append(" 0 100 0 255")     # dark green for 12 'cabinets'
     colors.append(" 255 165 0 255")   # orange     for 13 'furniture'  
