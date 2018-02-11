@@ -10,7 +10,16 @@ import os, shutil, sys, datetime, glob
 to_train    = False
 to_restore  = True
 directory = "gan_se_directory"  
-data_directory = "data"  
+
+argv_list = str(sys.argv) 
+if 'SUN' in argv_list:
+    data_directory  = 'data/SUN' 
+elif 'NYU' in argv_list:
+    data_directory  = 'data/NYU' 
+else:
+    print("Error: Wrong Arguments.!")
+    sys.exit(0)
+
 batch_size  = 100
 
 #=====================================================================================================================================================
@@ -247,7 +256,7 @@ def show_result(f_half_real, s_half_real, s_half_fake, batch_size, dataType):
     
     for i, item in enumerate(results):   
     
-        output    = open( data_directory + "/" + dataType[5:] + "_generated_" + str(i) + ".ply" , 'w') 
+        output    = open( data_directory + "/" + dataType[9:] + "_generated_" + str(i) + ".ply" , 'w') 
         ply       = ""
         numOfVrtc = 0
         

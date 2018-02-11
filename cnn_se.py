@@ -1,17 +1,4 @@
 
-# Softmax 
-# 13 classes   
-# input data is 2D 
-# input data plane by plane as 30 channels 
-# smaller architecture like pixel-CNN
-# no FC 
-# predict [0:26, 0:30, 30:60] half scene as labels
-# deeper architecture with 3 res block
-
-# v1 penalty
-
-# add another res connection to the end
-
 #====================================================================================================================================================
 
 import sys, glob, datetime, random, os , os.path, shutil
@@ -21,6 +8,8 @@ from   numpy            import array
 from   collections      import Counter
 from   multiprocessing  import Pool 
 import tensorflow       as     tf 
+
+#====================================================================================================================================================
 
 to_train   = False
 to_restore = True
