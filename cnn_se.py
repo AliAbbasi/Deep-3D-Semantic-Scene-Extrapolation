@@ -34,6 +34,7 @@ elif argv_list[1] == 'NYU':
     data_directory  = 'data/NYU'
 else:
     print("Error: Wrong Arguments.!")
+    sys.exit(0)
     
 if not os.path.exists(directory):
     os.makedirs(directory)
