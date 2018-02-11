@@ -27,11 +27,11 @@ to_restore = True
 
 directory  = 'cnn_se_directory'
 
-argv_list = str(sys.argv)
-if argv_list[1] == 'SUNCG':
-    data_directory  = 'data/SUN'
-elif argv_list[1] == 'NYU':
-    data_directory  = 'data/NYU'
+argv_list = str(sys.argv) 
+if 'SUN' in argv_list:
+    data_directory  = 'data/SUN' 
+elif 'NYU' in argv_list:
+    data_directory  = 'data/NYU' 
 else:
     print("Error: Wrong Arguments.!")
     sys.exit(0)
@@ -61,7 +61,7 @@ def writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1
     output.write( "plt.ylabel('Cost',  fontsize=14)                   " + "\r\n" )
     output.write( "plt.suptitle('Blue: Train Cost, Green: Valid Cost')" + "\r\n" )
     output.write( "plt.show()                                         " + "\r\n" ) 
-    print "costs.py file is created!"
+    print ("costs.py file is created!")
     
     #-----------------------------------------------------------------------------
     
@@ -96,7 +96,7 @@ def writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1
     output.write( "plt.ylabel('Accuracy',  fontsize=14)               " + "\r\n" )
     output.write( "plt.suptitle('Blue: Train Accu, Green: Valid Accu')" + "\r\n" )
     output.write( "plt.show()                                         " + "\r\n" ) 
-    print "accuracy.py file is created!"
+    print ("accuracy.py file is created!")
 
 #=====================================================================================================================================================
 
@@ -250,12 +250,12 @@ class ConvNet( object ):
 #===================================================================================================================================================
 
 def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) :
-    print "Saving the model..." 
+    print ("Saving the model..." )
     saver.save(sess, directory + '/my-model')   
     writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2)   
     
     # Visualize Validation Set ---------------------------------
-    print "Creating ply files..."  
+    print ("Creating ply files..."  )
     
     colors  = []  
     colors.append(" 0 0 0 255  ")     # balck      for 0  'empty'
@@ -339,12 +339,12 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
             output.write("end_header"                            + "\n")
             output.write( ply                                          ) 
             output.close()
-            print test + ".ply" + " is Done!" 
+            print (test + ".ply" + " is Done!" )
             counter += 1
             
             if counter == 8:
                 if flag == 1:
-                    print ".ply files are done!"
+                    print (".ply files are done!")
                     return
                 else:
                     flag = 1
@@ -355,7 +355,7 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
 def show_result(sess) : 
 
     # Visualize Validation Set ---------------------------------
-    print "Creating ply files..."  
+    print ("Creating ply files..."  )
     
     colors  = []  
     colors.append(" 0 0 0 255  ")     # balck      for 0  'empty'
@@ -446,7 +446,7 @@ def show_result(sess) :
         output.write("end_header"                            + "\n")
         output.write( ply                                          ) 
         output.close()
-        print test + ".ply" + " is Done!" 
+        print (test + ".ply" + " is Done!" )
     
     print ("A1: ", accu1, " A2:", accu2)    
 #===================================================================================================================================================
@@ -519,7 +519,7 @@ if __name__ == '__main__':
             if os.path.exists(directory + '/my-model.meta'): 
                 new_saver = tf.train.import_meta_graph(directory + '/my-model.meta')
                 new_saver.restore(sess, tf.train.latest_checkpoint(directory)) 
-                print "\r\n------------ Saved weights restored. ! ------------" 
+                print ("\r\n------------ Saved weights restored. ! ------------" )
         
         print("\r\n"+ str(datetime.datetime.now().time())[:-7] + " ------------------------------------------------------")   
         
@@ -547,9 +547,9 @@ if __name__ == '__main__':
         while(True):  
             for axisX in range(30,40):    # augmentation loop
             
-                print "\r\n ----- This is the loop: " + str(axisX - 29) + " of 10 augmentation loops. -----" 
+                print ("\r\n ----- This is the loop: " + str(axisX - 29) + " of 10 augmentation loops. -----" )
                 saver.save(sess, directory + '/my-model') 
-                print "\r\n Model saved! \r\n" 
+                print ("\r\n Model saved! \r\n" )
                 
                 for npyFile in glob.glob('*.npy'): 
                     trData, trLabel = [], [] 
@@ -590,7 +590,7 @@ if __name__ == '__main__':
                         # -------------- write cost and accuracy --------------  
                         if step%1000 == 0: 
                             backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
-                            print "axisX: " + str(axisX)   
+                            print ("axisX: " + str(axisX)   )
                         
                         step += 1  
                         batch = []    
@@ -601,7 +601,7 @@ if __name__ == '__main__':
             
             epoch += 1    
             if epoch > maxEpoch:
-                print " --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs and 10 augmentation loops in each epoch.! \r\n --- \r\n ---" 
+                print (" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs and 10 augmentation loops in each epoch.! \r\n --- \r\n ---" )
                 sys.exit(0) 
         
 #========================================================================================================================================================
