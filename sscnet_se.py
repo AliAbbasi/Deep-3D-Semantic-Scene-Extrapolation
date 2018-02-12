@@ -388,8 +388,13 @@ def show_result(sess):
         a1.append(accu1)
         a2.append(accu2) 
     
-    accu1_avg = sum(accu1)/ (len(accu1) * 1.0)
-    accu2_avg = sum(accu2)/ (len(accu2) * 1.0)
+    accu1_avg = sum(accu1)  
+    accu2_avg = sum(accu2)  
+    
+    accu1_avg = accu1_avg / (len(accu1) * 1.0 )  
+    accu2_avg = accu2_avg / (len(accu2) * 1.0 )  
+    
+    
     print("A1: ", accu1, " A2:", accu2)
     
     for test in glob.glob(data_directory + '/*.npy'):
