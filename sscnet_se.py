@@ -418,7 +418,7 @@ def show_result(sess):
 
         scn = np.concatenate((trData, score), axis=2)
 
-        output = open(directory + "/" + test + ".ply", 'w')
+        output = open( directory + "/" + test[9:] + ".ply" , 'w') 
         ply = ""
         numOfVrtc = 0
         for idx1 in range(26):
