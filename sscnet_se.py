@@ -375,6 +375,7 @@ def show_result(sess):
             accu1, accu2 = accuFun(sess, trData, trLabel, bs)
             a1.append(accu1)
             a2.append(accu2)
+            print (type(accu1))
             trData, trLabel, batch_arr = [], [], []
     
     if len(batch_arr) > 0: 
@@ -387,13 +388,13 @@ def show_result(sess):
         accu1, accu2 = accuFun(sess, trData, trLabel, bs)
         a1.append(accu1)
         a2.append(accu2) 
+        print (type(accu1))
     
     accu1_avg = sum(accu1)  
     accu2_avg = sum(accu2)  
     
     accu1_avg = accu1_avg / (len(accu1) * 1.0 )  
     accu2_avg = accu2_avg / (len(accu2) * 1.0 )  
-    
     
     print("A1: ", accu1, " A2:", accu2)
     
