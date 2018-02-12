@@ -374,8 +374,7 @@ def show_result(sess):
             score = sess.run(ConvNet_class.score, feed_dict={x: trData, keepProb: 1.0, phase: False, batchSize: bs})
             accu1, accu2 = accuFun(sess, trData, trLabel, bs)
             a1.append(accu1)
-            a2.append(accu2)
-            print (type(accu1))
+            a2.append(accu2) 
             trData, trLabel, batch_arr = [], [], []
     
     if len(batch_arr) > 0: 
@@ -388,15 +387,11 @@ def show_result(sess):
         accu1, accu2 = accuFun(sess, trData, trLabel, bs)
         a1.append(accu1)
         a2.append(accu2) 
-        print (type(accu1))
+        
+    accu1_avg = sum(a1) / (len(a1) * 1.0 )  
+    accu2_avg = sum(a1) / (len(a1) * 1.0 )  
     
-    accu1_avg = sum(accu1)  
-    accu2_avg = sum(accu2)  
-    
-    accu1_avg = accu1_avg / (len(accu1) * 1.0 )  
-    accu2_avg = accu2_avg / (len(accu2) * 1.0 )  
-    
-    print("A1: ", accu1, " A2:", accu2)
+    print("A1: ", accu1_avg, " A2:", accu2_avg)
     
     for test in glob.glob(data_directory + '/*.npy'):
         scene = np.load(test)
