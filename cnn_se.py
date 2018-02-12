@@ -282,12 +282,7 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
             trData, trLabel = [], [] 
             
             scene = np.load(test) 
-            #-----------------------------
-            temp = np.zeros((26,30,60))
-            for dd in range(0,60):
-                temp[ 0:26, 0:30, dd ] = scene[ dd, 0:26, 0:30 ]
-            scene = temp
-            #-----------------------------
+            scene = scene.transpose(1, 2, 0) 
 
             trData = scene[ 0:26 , 0:30 ,  0:30 ]  # input 
             trLabel= scene[ 0:26 , 0:30 , 30:60 ]  # gt     
@@ -366,13 +361,8 @@ def show_result(sess) :
     trData, trLabel  = [], [] 
     batch_arr = []
     for test in glob.glob(data_directory + '/*.npy'): 
-        scene = np.load(test)   
-        #-----------------------------
-        temp = np.zeros((26,30,60))
-        for dd in range(0,60):
-            temp[ 0:26, 0:30, dd ] = scene[ dd, 0:26, 0:30 ]
-        scene = temp
-        #----------------------------- 
+        scene = np.load(test) 
+        scene = scene.transpose(1, 2, 0)
         batch_arr.append( scene )
         bs += 1
     
@@ -389,12 +379,7 @@ def show_result(sess) :
         trData, trLabel = [], [] 
         
         scene = np.load(test) 
-        #-----------------------------
-        temp = np.zeros((26,30,60))
-        for dd in range(0,60):
-            temp[ 0:26, 0:30, dd ] = scene[ dd, 0:26, 0:30 ]
-        scene = temp
-        #-----------------------------
+        scene = scene.transpose(1, 2, 0)
 
         trData = scene[ 0:26 , 0:30 ,  0:30 ]  # input 
         trLabel= scene[ 0:26 , 0:30 , 30:60 ]  # gt     

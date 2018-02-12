@@ -229,7 +229,6 @@ class ConvNet(object):
         self.update = ConvNet.updateFun(self)  # Computing the update function
         self.sum = ConvNet.sumFun(self)  # summary logger 4 TensorBoard
 
-
 # ====================================================================================================================
 
 
@@ -272,13 +271,8 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
             flag = 1
 
         for test in glob.glob(files):
-            scene = np.load(test)
-            # -----------------------------
-            temp = np.zeros((26, 30, 60))
-            for dd in range(0, 60):
-                temp[0:26, 0:30, dd] = scene[dd, 0:26, 0:30]
-            scene = temp
-            # -----------------------------
+            scene = np.load(test) 
+            scene = scene.transpose(1, 2, 0) 
 
             trData = scene[0:26, 0:30, 0:30]  # input
             trLabel = scene[0:26, 0:30, 30:60]  # gt
@@ -331,7 +325,6 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
                     flag = 1
                     break
 
-
 # ====================================================================================================================
 
 
@@ -340,20 +333,20 @@ def show_result(sess):
     print("Creating ply files...")
 
     colors = []
-    colors.append(" 0 0 0 255  ")  # black      for 0  'empty'
-    colors.append(" 139 0 0 255")  # dark red   for 1  'ceiling'
-    colors.append(" 0 128 0 255")  # green      for 2  'floor'
+    colors.append(" 0 0 0 255  ")      # black      for 0  'empty'
+    colors.append(" 139 0 0 255")      # dark red   for 1  'ceiling'
+    colors.append(" 0 128 0 255")      # green      for 2  'floor'
     colors.append(" 173 216 230 255")  # light blue for 3  'wall'
-    colors.append(" 0 0 255 255")  # blue       for 4  'window'
-    colors.append(" 255 0 0 255")  # red        for 5  'door'
-    colors.append(" 218 165 32 255")  # goldenrod  for 6  'chair'
+    colors.append(" 0 0 255 255")      # blue       for 4  'window'
+    colors.append(" 255 0 0 255")      # red        for 5  'door'
+    colors.append(" 218 165 32 255")   # goldenrod  for 6  'chair'
     colors.append(" 210 180 140 255")  # tan        for 7  'bed'
     colors.append(" 128 0   128 255")  # purple     for 8  'sofa'
-    colors.append(" 0  0 139 255")  # dark blue  for 9  'table'
-    colors.append(" 255 255 0 255")  # yellow     for 10 'coffee table'
+    colors.append(" 0  0 139 255")     # dark blue  for 9  'table'
+    colors.append(" 255 255 0 255")    # yellow     for 10 'coffee table'
     colors.append(" 128 128 128 255")  # gray       for 11 'shelves'
-    colors.append(" 0 100 0 255")  # dark green for 12 'cabinets'
-    colors.append(" 255 165 0 255")  # orange     for 13 'furniture'
+    colors.append(" 0 100 0 255")      # dark green for 12 'cabinets'
+    colors.append(" 255 165 0 255")    # orange     for 13 'furniture'
 
     bs = 64 
     counter = 0
@@ -441,9 +434,6 @@ def show_result(sess):
         output.write(ply)
         output.close()
         print(test + ".ply" + " is Done!")
-
-    print("A1: ", accu1, " A2:", accu2)
-
 
 # ====================================================================================================================
 
