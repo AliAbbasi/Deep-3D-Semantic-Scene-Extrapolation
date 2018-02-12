@@ -9,8 +9,8 @@ import tensorflow as tf
 
 # ====================================================================================================================
 
-to_train = True
-to_restore = False
+to_train = False
+to_restore = True
 directory = 'sscnet_se_directory'
 
 argv_list = str(sys.argv)
@@ -20,7 +20,7 @@ elif 'NYU' in argv_list:
     data_directory = 'data/NYU'
 else:
     print("Error: Wrong Arguments.!")
-    # sys.exit(0)
+    sys.exit(0)
 if not os.path.exists(directory):
     os.makedirs(directory)
 
@@ -93,41 +93,41 @@ class ConvNet(object):
 
     def paramsFun(self):
         params_w = {
-            'w1':    tf.Variable(tf.truncated_normal([7, 7, 7, 1,  16],   stddev=0.01)),
-            'w2':    tf.Variable(tf.truncated_normal([3, 3, 3, 16, 32],   stddev=0.01)),
-            'w3':    tf.Variable(tf.truncated_normal([3, 3, 3, 32, 32],   stddev=0.01)),
-            'wRes1': tf.Variable(tf.truncated_normal([1, 1, 1, 16, 32],   stddev=0.01)),
-            'w4':    tf.Variable(tf.truncated_normal([3, 3, 3, 32, 64],   stddev=0.01)),
-            'w5':    tf.Variable(tf.truncated_normal([3, 3, 3, 64, 64],   stddev=0.01)),
-            'wRes2': tf.Variable(tf.truncated_normal([1, 1, 1, 64, 64],   stddev=0.01)),
-            'w6':    tf.Variable(tf.truncated_normal([3, 3, 3, 64, 64],   stddev=0.01)),
-            'w7':    tf.Variable(tf.truncated_normal([3, 3, 3, 64, 64],   stddev=0.01)),
-            'w8':    tf.Variable(tf.truncated_normal([3, 3, 3, 64, 64],   stddev=0.01)),
-            'w9':    tf.Variable(tf.truncated_normal([3, 3, 3, 64, 64],   stddev=0.01)),
-            'w10':   tf.Variable(tf.truncated_normal([3, 3, 3, 64, 64],   stddev=0.01)),
-            'w11':   tf.Variable(tf.truncated_normal([3, 3, 3, 64, 64],   stddev=0.01)),
-            'w12':   tf.Variable(tf.truncated_normal([1, 1, 1, 128, 192],  stddev=0.01)),
-            'w13':   tf.Variable(tf.truncated_normal([1, 1, 1, 128, 128], stddev=0.01)),
-            'wOut':  tf.Variable(tf.truncated_normal([1, 1, 1, 128, 14],  stddev=0.01))
+            'w1':    tf.Variable(tf.truncated_normal([7, 7, 7, 1,   8], stddev=0.01)),
+            'w2':    tf.Variable(tf.truncated_normal([3, 3, 3, 8,  16], stddev=0.01)),
+            'w3':    tf.Variable(tf.truncated_normal([3, 3, 3, 16, 16], stddev=0.01)),
+            'wRes1': tf.Variable(tf.truncated_normal([1, 1, 1, 8,  16], stddev=0.01)),
+            'w4':    tf.Variable(tf.truncated_normal([3, 3, 3, 16, 32], stddev=0.01)),
+            'w5':    tf.Variable(tf.truncated_normal([3, 3, 3, 32, 32], stddev=0.01)),
+            'wRes2': tf.Variable(tf.truncated_normal([1, 1, 1, 32, 32], stddev=0.01)),
+            'w6':    tf.Variable(tf.truncated_normal([3, 3, 3, 32, 32], stddev=0.01)),
+            'w7':    tf.Variable(tf.truncated_normal([3, 3, 3, 32, 32], stddev=0.01)),
+            'w8':    tf.Variable(tf.truncated_normal([3, 3, 3, 32, 32], stddev=0.01)),
+            'w9':    tf.Variable(tf.truncated_normal([3, 3, 3, 32, 32], stddev=0.01)),
+            'w10':   tf.Variable(tf.truncated_normal([3, 3, 3, 32, 32], stddev=0.01)),
+            'w11':   tf.Variable(tf.truncated_normal([3, 3, 3, 32, 32], stddev=0.01)),
+            'w12':   tf.Variable(tf.truncated_normal([1, 1, 1, 96, 32], stddev=0.01)),
+            'w13':   tf.Variable(tf.truncated_normal([1, 1, 1, 32, 32], stddev=0.01)),
+            'wOut':  tf.Variable(tf.truncated_normal([1, 1, 1, 32, 14], stddev=0.01))
         }
 
         params_b = {
-            'b1':    tf.Variable(tf.truncated_normal([16],  stddev=0.01)),
-            'b2':    tf.Variable(tf.truncated_normal([32],  stddev=0.01)),
-            'b3':    tf.Variable(tf.truncated_normal([32],  stddev=0.01)),
-            'bRes1': tf.Variable(tf.truncated_normal([32],  stddev=0.01)),
-            'b4':    tf.Variable(tf.truncated_normal([64],  stddev=0.01)),
-            'b5':    tf.Variable(tf.truncated_normal([64],  stddev=0.01)),
-            'bRes2': tf.Variable(tf.truncated_normal([64],  stddev=0.01)),
-            'b6':    tf.Variable(tf.truncated_normal([64],  stddev=0.01)),
-            'b7':    tf.Variable(tf.truncated_normal([64],  stddev=0.01)),
-            'b8':    tf.Variable(tf.truncated_normal([64],  stddev=0.01)),
-            'b9':    tf.Variable(tf.truncated_normal([64],  stddev=0.01)),
-            'b10':   tf.Variable(tf.truncated_normal([64],  stddev=0.01)),
-            'b11':   tf.Variable(tf.truncated_normal([64],  stddev=0.01)),
-            'b12':   tf.Variable(tf.truncated_normal([128], stddev=0.01)),
-            'b13':   tf.Variable(tf.truncated_normal([128], stddev=0.01)),
-            'bOut':  tf.Variable(tf.truncated_normal([14],  stddev=0.01))
+            'b1':    tf.Variable(tf.truncated_normal([ 8], stddev=0.01)),
+            'b2':    tf.Variable(tf.truncated_normal([16], stddev=0.01)),
+            'b3':    tf.Variable(tf.truncated_normal([16], stddev=0.01)),
+            'bRes1': tf.Variable(tf.truncated_normal([16], stddev=0.01)),
+            'b4':    tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'b5':    tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'bRes2': tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'b6':    tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'b7':    tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'b8':    tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'b9':    tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'b10':   tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'b11':   tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'b12':   tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'b13':   tf.Variable(tf.truncated_normal([32], stddev=0.01)),
+            'bOut':  tf.Variable(tf.truncated_normal([14], stddev=0.01))
         }
 
         return params_w, params_b
@@ -165,13 +165,13 @@ class ConvNet(object):
 
         self.x_ = tf.reshape(x, shape=[-1, 26, 30, 30, 1])
 
-        conv_1 = conv3d(self.x_, self.params_w_['w1'], self.params_b_['b1'], strides=2)
+        conv_1 = conv3d(self.x_, self.params_w_['w1'], self.params_b_['b1'])
         conv_2 = conv3d(conv_1, self.params_w_['w2'], self.params_b_['b2'])
         conv_3 = conv3d(conv_2, self.params_w_['w3'], self.params_b_['b3'])
         res1 = conv3d(conv_1, self.params_w_['wRes1'], self.params_b_['bRes1'])
         merge_1 = tf.add_n([conv_3, res1], "merge_1")
-        pooling = maxpool3d(merge_1)
-        conv_4 = conv3d(pooling, self.params_w_['w4'], self.params_b_['b4'])
+        
+        conv_4 = conv3d(merge_1, self.params_w_['w4'], self.params_b_['b4'])
         conv_5 = conv3d(conv_4, self.params_w_['w5'], self.params_b_['b5'])
         res2 = conv3d(conv_5, self.params_w_['wRes2'], self.params_b_['bRes2'])
         merge_2 = tf.add_n([conv_5, res2], "merge_2")
@@ -181,19 +181,17 @@ class ConvNet(object):
         convD_8 = d_conv3d(merge_3, self.params_w_['w8'], self.params_b_['b8'], d_rate=2, stride=1)
         convD_9 = d_conv3d(convD_8, self.params_w_['w9'], self.params_b_['b9'], d_rate=2, stride=1)
         merge_4 = tf.add_n([convD_8, convD_9], "merge_4")
-        convD_10 = d_conv3d(merge_4, self.params_w_['w10'], self.params_b_['b10'], d_rate=2, stride=1)
+        convD_10 = d_conv3d(merge_4, self.params_w_['w10'], self.params_b_['b10'], d_rate=2, stride=1) 
         convD_11 = d_conv3d(convD_10, self.params_w_['w11'], self.params_b_['b11'], d_rate=2, stride=1)
         merge_5 = tf.add_n([convD_10, convD_11], "merge_5")
-        concat = tf.concat(axis=4, values=[merge_3, merge_4, merge_5])
-        convT_12 = conv3d_transpose(concat, self.params_w_['w12'],
-                                    self.params_b_['b12'], [self.batchSize, 13, 15, 15, 128], strides=2)
-        convT_13 = conv3d_transpose(convT_12, self.params_w_['w13'],
-                                    self.params_b_['b13'], [self.batchSize, 26, 30, 30, 128], strides=2)
-        conv_out = conv3d(convT_13, self.params_w_['wOut'], self.params_b_['bOut'])
-
-        # print(conv_out.get_shape())
-        # sys.exit(0)
-
+        
+        concat = tf.concat(axis=4, values=[merge_3, merge_4, merge_5]) 
+        
+        convT_12 = conv3d(concat, self.params_w_['w12'], self.params_b_['b12'] )
+        convT_13 = conv3d(convT_12, self.params_w_['w13'], self.params_b_['b13'] )
+        
+        conv_out = conv3d(convT_13, self.params_w_['wOut'], self.params_b_['bOut']) 
+        
         netOut = tf.contrib.layers.flatten(conv_out)
         return netOut
 
