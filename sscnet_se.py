@@ -389,7 +389,7 @@ def show_result(sess):
         a2.append(accu2) 
         
     accu1_avg = sum(a1) / (len(a1) * 1.0 )  
-    accu2_avg = sum(a1) / (len(a1) * 1.0 )  
+    accu2_avg = sum(a2) / (len(a2) * 1.0 )  
     
     print("A1: ", accu1_avg, " A2:", accu2_avg)
     
@@ -398,7 +398,12 @@ def show_result(sess):
         trData, trLabel = [], []
 
         scene = np.load(test) 
-        scene = scene.transpose(2, 0, 1)
+        #-----------------------------
+        temp = np.zeros((26,30,60))
+        for dd in range(0,60):
+            temp[ 0:26, 0:30, dd ] = scene[ dd, 0:26, 0:30 ]
+        scene = temp
+        #-----------------------------
 
         trData = scene[0:26, 0:30, 0:30]  # input
         trLabel = scene[0:26, 0:30, 30:60]  # gt
