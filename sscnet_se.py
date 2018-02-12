@@ -355,27 +355,45 @@ def show_result(sess):
     colors.append(" 0 100 0 255")  # dark green for 12 'cabinets'
     colors.append(" 255 165 0 255")  # orange     for 13 'furniture'
 
-    bs = 0
-    batch_arr = []
+    bs = 64 
+    counter = 0
+    a1, a2 = [], []
+    trData, trLabel, batch_arr = [], [], []
     for test in glob.glob(data_directory + '/*.npy'): 
-        scene = np.load(test)
-        # -----------------------------
-        temp = np.zeros((26, 30, 60))
-        for dd in range(0, 60):
-            temp[0:26, 0:30, dd] = scene[dd, 0:26, 0:30]
-        scene = temp
-        # -----------------------------
-        batch_arr.append(scene)
-        bs += 1
-
-    batch_arr = np.reshape(batch_arr, (bs, 26, 30, 60))
-    trData = batch_arr[:, 0:26, 0:30, 0:30]  # input
-    trLabel = batch_arr[:, 0:26, 0:30, 30:60]  # gt
-    trData = np.reshape(trData, (-1, 30 * 26 * 30))
-    score = sess.run(ConvNet_class.score, feed_dict={x: trData, keepProb: 1.0, phase: False, batchSize: bs})
-    accu1, accu2 = accuFun(sess, trData, trLabel, bs)
+        if counter < bs:
+            temp = np.zeros((26, 30, 60))
+            for dd in range(0, 60):
+                temp[0:26, 0:30, dd] = scene[dd, 0:26, 0:30]
+            scene = temp
+            batch_arr.append(scene)
+            counter += 1
+        else:
+            counter = 0 
+            batch_arr = np.reshape(batch_arr, (bs, 26, 30, 60))
+            trData = batch_arr[:, 0:26, 0:30, 0:30]  # input
+            trLabel = batch_arr[:, 0:26, 0:30, 30:60]  # gt
+            trData = np.reshape(trData, (-1, 30 * 26 * 30))
+            score = sess.run(ConvNet_class.score, feed_dict={x: trData, keepProb: 1.0, phase: False, batchSize: bs})
+            accu1, accu2 = accuFun(sess, trData, trLabel, bs)
+            a1.append(accu1)
+            a2.append(accu2)
+            trData, trLabel, batch_arr = [], [], []
+    
+    if len(batch_arr) > 0: 
+        bs = len(batch_arr)
+        batch_arr = np.reshape(batch_arr, (bs, 26, 30, 60))
+        trData = batch_arr[:, 0:26, 0:30, 0:30]  # input
+        trLabel = batch_arr[:, 0:26, 0:30, 30:60]  # gt
+        trData = np.reshape(trData, (-1, 30 * 26 * 30))
+        score = sess.run(ConvNet_class.score, feed_dict={x: trData, keepProb: 1.0, phase: False, batchSize: bs})
+        accu1, accu2 = accuFun(sess, trData, trLabel, bs)
+        a1.append(accu1)
+        a2.append(accu2) 
+    
+    accu1_avg = sum(accu1)/float(len(accu1))
+    accu2_avg = sum(accu2)/float(len(accu2))
     print("A1: ", accu1, " A2:", accu2)
-
+    
     for test in glob.glob(data_directory + '/*.npy'):
         scene = np.load(test)
         trData, trLabel = [], []
