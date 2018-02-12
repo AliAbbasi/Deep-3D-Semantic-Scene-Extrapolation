@@ -362,7 +362,7 @@ def show_result(sess):
     for test in glob.glob(data_directory + '/*.npy'): 
         if counter < bs:
             scene = np.load(test) 
-            scene = scene.transpose(2, 0, 1) 
+            scene = scene.transpose(1, 2, 0) 
             batch_arr.append(scene)
             counter += 1
         else:
@@ -398,12 +398,7 @@ def show_result(sess):
         trData, trLabel = [], []
 
         scene = np.load(test) 
-        #-----------------------------
-        temp = np.zeros((26,30,60))
-        for dd in range(0,60):
-            temp[ 0:26, 0:30, dd ] = scene[ dd, 0:26, 0:30 ]
-        scene = temp
-        #-----------------------------
+        scene = scene.transpose(1, 2, 0)
 
         trData = scene[0:26, 0:30, 0:30]  # input
         trLabel = scene[0:26, 0:30, 30:60]  # gt
