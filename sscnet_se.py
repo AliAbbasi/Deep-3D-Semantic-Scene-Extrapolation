@@ -330,7 +330,7 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
 
 def show_result(sess):
     # Visualize Validation Set ---------------------------------
-    print("Creating ply files...")
+    print("The model is running ...")
 
     colors = []
     colors.append(" 0 0 0 255  ")      # black      for 0  'empty'
@@ -386,6 +386,7 @@ def show_result(sess):
     
     print("A1: ", accu1_avg, " A2:", accu2_avg)
     
+    print("Creating .ply files ...")
     for test in glob.glob(data_directory + '/*.npy'):
         scene = np.load(test)
         trData, trLabel = [], []
@@ -433,8 +434,8 @@ def show_result(sess):
         output.write("end_header" + "\n")
         output.write(ply)
         output.close()
-        print(test + ".ply" + " is Done!")
-
+        # print(test + ".ply" + " is Done!")
+    print(".ply files are created.!")
 # ====================================================================================================================
 
 

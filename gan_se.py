@@ -254,6 +254,7 @@ def show_result(f_half_real, s_half_real, s_half_fake, batch_size, dataType):
     f_half_real = np.concatenate(( f_half_real , temp        ), axis=3 ) 
     results     = np.concatenate(( f_half_real , results     ), axis=3 ) 
     
+    print("Creating .ply files...")
     for i, item in enumerate(results):   
     
         output    = open( data_directory + "/" + dataType[9:] + "_generated_" + str(i) + ".ply" , 'w') 
@@ -282,7 +283,7 @@ def show_result(f_half_real, s_half_real, s_half_fake, batch_size, dataType):
         output.write("end_header"                             + "\n") 
         output.write( ply                                           ) 
         output.close() 
-        print (str(dataType) + "_generated_" + str(i) + ".ply is Done.!") 
+        # print (str(dataType) + "_generated_" + str(i) + ".ply is Done.!") 
 
 #===================================================================================================================================================
 
@@ -371,6 +372,7 @@ def train():
         os.mkdir(directory)
     
     # -------------- test phase --------------
+    print("The model is running ...")
     if to_train == False:
         chkpt_fname = tf.train.latest_checkpoint(directory)
         saver.restore(sess, chkpt_fname)
