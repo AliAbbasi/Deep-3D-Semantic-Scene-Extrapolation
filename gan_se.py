@@ -376,6 +376,8 @@ def train():
     if to_train == False:
         chkpt_fname = tf.train.latest_checkpoint(directory)
         saver.restore(sess, chkpt_fname)
+        print("\r\n------------ Saved weights restored. ! ------------") 
+        print("\r\n---------------------------------------------------") 
         batch_arr = [] 
         bs        = 0
         for npyFile in glob.glob(data_directory + '/*.npy'): 
