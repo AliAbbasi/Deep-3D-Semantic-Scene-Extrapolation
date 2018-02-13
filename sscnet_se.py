@@ -19,7 +19,7 @@ if 'SUN' in argv_list:
 elif 'NYU' in argv_list:
     data_directory = 'data/NYU'
 else:
-    print("Error: Wrong Arguments.!")
+    print("Invalid Arguments.!")
     sys.exit(0)
 if not os.path.exists(directory):
     os.makedirs(directory)
@@ -355,9 +355,7 @@ def show_result(sess):
     for test in glob.glob(data_directory + '/*.npy'): 
         if counter < bs:
             scene = np.load(test) 
-            # scene = scene.transpose(1, 2, 0) 
-            # scene = scene.transpose(2, 0, 1) 
-            scene = scene.transpose(0, 2, 1) 
+            scene = scene.transpose(1, 2, 0)  
             batch_arr.append(scene)
             counter += 1
         else:
