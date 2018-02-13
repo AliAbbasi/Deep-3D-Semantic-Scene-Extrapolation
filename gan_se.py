@@ -387,8 +387,7 @@ def train():
         batch_arr = 2 * (batch_arr.astype(np.float32) / 13.0) - 1     
         generated_scenes = sess.run( s_half_gen, feed_dict={batchSize: bs, f_half_real: batch_arr[:, :, :, 0:30], keep_prob: np.sum(1.0).astype(np.float32)})
         accu1, accu2     = accuFun(sess, bs, batch_arr[:, :, :, 30:60], generated_scenes)
-        print ("A1: ", accu1, " A2:", accu2)
-        
+        print("Accuracy: ", accu1, " Completeness:", accu2)
         
         batch_arr = [] 
         bs        = 1 

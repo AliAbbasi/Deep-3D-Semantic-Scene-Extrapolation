@@ -372,7 +372,7 @@ def show_result(sess) :
     trData  = np.reshape( trData,  ( -1, 30 * 26 * 30 ))  
     score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
     accu1, accu2 = accuFun ( sess, trData, trLabel, bs )     
-    print ("A1: ", accu1, " A2:", accu2)
+    print("Accuracy: ", accu1, " Completeness:", accu2)
     
     print("Creating .ply files ...")
     for test in glob.glob(data_directory + '/*.npy'): 

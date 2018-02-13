@@ -383,7 +383,7 @@ def show_result(sess):
         
     accu1_avg = sum(a1) / (len(a1) * 1.0 )  
     accu2_avg = sum(a2) / (len(a2) * 1.0 )  
-    print("A1: ", accu1_avg, " A2:", accu2_avg)
+    print("Accuracy: ", accu1_avg, " Completeness:", accu2_avg)
     
     print("Creating .ply files ...")
     for test in glob.glob(data_directory + '/*.npy'):
