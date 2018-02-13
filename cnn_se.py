@@ -422,7 +422,7 @@ def show_result(sess) :
         output.write( ply                                          ) 
         output.close()
         # print(test + ".ply" + " is Done!")
-    print(".ply files are created.!")
+        
 #===================================================================================================================================================
   
 def accuFun(sess,trData,trLabel,batch_size):
@@ -493,9 +493,9 @@ if __name__ == '__main__':
             if os.path.exists(directory + '/my-model.meta'): 
                 new_saver = tf.train.import_meta_graph(directory + '/my-model.meta')
                 new_saver.restore(sess, tf.train.latest_checkpoint(directory)) 
-                print ("\r\n------------ Saved weights restored. ! ------------" )
+                print ("\r\n------------ Saved weights restored. ! ------------")
         
-        print("\r\n"+ str(datetime.datetime.now().time())[:-7] + " ------------------------------------------------------")   
+        print("\r\n---------------------------------------------------")   
         
         # -------------- test phase --------------
         if to_train == False:  

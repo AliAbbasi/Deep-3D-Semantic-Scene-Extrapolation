@@ -383,7 +383,6 @@ def show_result(sess):
         
     accu1_avg = sum(a1) / (len(a1) * 1.0 )  
     accu2_avg = sum(a2) / (len(a2) * 1.0 )  
-    
     print("A1: ", accu1_avg, " A2:", accu2_avg)
     
     print("Creating .ply files ...")
@@ -435,7 +434,7 @@ def show_result(sess):
         output.write(ply)
         output.close()
         # print(test + ".ply" + " is Done!")
-    print(".ply files are created.!")
+        
 # ====================================================================================================================
 
 
@@ -505,8 +504,8 @@ if __name__ == '__main__':
                 new_saver.restore(sess, tf.train.latest_checkpoint(directory))
                 print("\r\n------------ Saved weights restored. ! ------------")
 
-        print("\r\n" + str(datetime.datetime.now().time())[:-7] + " -------------------------------------------------")
-
+        print("\r\n---------------------------------------------------") 
+        
         # -------------- test phase --------------
         if not to_train:
             show_result(sess)
