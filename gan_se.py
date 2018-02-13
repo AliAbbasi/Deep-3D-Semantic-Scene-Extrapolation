@@ -254,7 +254,6 @@ def show_result(f_half_real, s_half_real, s_half_fake, batch_size, dataType):
     f_half_real = np.concatenate(( f_half_real , temp        ), axis=3 ) 
     results     = np.concatenate(( f_half_real , results     ), axis=3 ) 
     
-    print("Creating .ply files...")
     for i, item in enumerate(results):   
     
         output    = open( data_directory + "/" + dataType[9:] + "_generated_" + str(i) + ".ply" , 'w') 
@@ -392,7 +391,8 @@ def train():
         
         
         batch_arr = [] 
-        bs        = 1
+        bs        = 1 
+        print("Creating .ply files...")
         for npyFile in glob.glob(data_directory + '/*.npy'): 
             batch_arr.append( np.load(npyFile) ) 
             batch_arr = np.reshape( batch_arr, ( bs, 60, 26, 30 ))    
@@ -401,8 +401,7 @@ def train():
             generated_scenes = sess.run( s_half_gen, feed_dict={batchSize: bs, f_half_real: batch_arr[:, :, :, 0:30], keep_prob: np.sum(1.0).astype(np.float32)})
             show_result(batch_arr[:, :, :, 0:30], batch_arr[:, :, :, 30:60], generated_scenes, bs, npyFile) 
             batch_arr = [] 
-        print (".ply files are created.!")
-        print ("A1: ", accu1, " A2:", accu2)
+        print (".ply files are created.!") 
         sys.exit(0)
         
     # -------------- training loop --------------
