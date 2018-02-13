@@ -356,7 +356,8 @@ def show_result(sess):
         if counter < bs:
             scene = np.load(test) 
             # scene = scene.transpose(1, 2, 0) 
-            scene = scene.transpose(2, 0, 1) 
+            # scene = scene.transpose(2, 0, 1) 
+            scene = scene.transpose(0, 2, 1) 
             batch_arr.append(scene)
             counter += 1
         else:
