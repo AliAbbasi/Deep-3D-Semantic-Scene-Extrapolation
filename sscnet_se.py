@@ -355,7 +355,8 @@ def show_result(sess):
     for test in glob.glob(data_directory + '/*.npy'): 
         if counter < bs:
             scene = np.load(test) 
-            scene = scene.transpose(1, 2, 0) 
+            # scene = scene.transpose(1, 2, 0) 
+            scene = scene.transpose(2, 0, 1) 
             batch_arr.append(scene)
             counter += 1
         else:
