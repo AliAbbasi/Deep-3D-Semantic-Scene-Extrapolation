@@ -21,9 +21,9 @@ elif 'NYU' in argv_list:
 else:
     print("Invalid Arguments.!")
     sys.exit(0)
+    
 if not os.path.exists(directory):
     os.makedirs(directory)
-
 
 # ====================================================================================================================
 

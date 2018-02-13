@@ -1,15 +1,15 @@
 
 #====================================================================================================================================================
 
-import tensorflow                          as     tf
-import numpy                               as     np 
+import tensorflow as tf
+import numpy as np 
 import os, shutil, sys, datetime, glob
 
 #====================================================================================================================================================
 
-to_train    = False
-to_restore  = True
-directory = "gan_se_directory"  
+to_train   = False
+to_restore = True
+directory  = "gan_se_directory"  
 
 argv_list = str(sys.argv) 
 if 'SUN' in argv_list:
