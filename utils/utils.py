@@ -1,6 +1,7 @@
 import numpy as np
 import glob
 
+# ====================================================================================================================
 
 def write_cost_and_accuracy(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2):
     output = open(directory + "/costs.py", 'w')
@@ -57,6 +58,7 @@ def write_cost_and_accuracy(directory, train_cost, valid_cost, train_accu1, trai
     output.write("plt.show()                                         " + "\r\n")
     print("accuracy.py file is created!")
 
+# ====================================================================================================================
 
 def backup(directory, sess, saver, writer, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2):
     print("Saving the model...")
@@ -162,3 +164,6 @@ def backup(directory, sess, saver, writer, train_cost, valid_cost, train_accu1, 
                 else:
                     flag = 1
                     break
+                    
+# ====================================================================================================================
+
