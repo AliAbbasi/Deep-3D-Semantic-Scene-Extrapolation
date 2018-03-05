@@ -5,22 +5,14 @@
 import json 
 import glob
 import sys
+import os
 
 # ----------------------------------------------------------------------------------
 
 def json_reader(json_file):
-    rooms = []
     data = json.load(open(json_file)) 
-    for level in data["levels"]: 
-        level["id"]
-        level["bbox"]
-        level["nodes"] 
-        # get floors here
-        
-        for node in level["nodes"]: 
-            # get rooms here
-            node["id"] # 0_0, 0_1, ...
-            node["type"] # Object, Box, Ground, Room
+    for level in data["levels"]:
+        for node in level["nodes"]:
             if node["type"] == "Room":
                 get_room(node, json_file) 
                 
@@ -31,7 +23,7 @@ def get_room(room, json_file):
     data = json.load(open(json_file))  
     output_json = open(str(data["id"]) + "_" + str(room_id) + ".json", 'w') 
     
-    if ("nodeIndices" in room):
+    if "nodeIndices" in room:
         node_indices = room["nodeIndices"]
         
         for level in data["levels"]: 
@@ -60,5 +52,4 @@ if __name__ == '__main__':
     rooms_of_houses = []
     for json_file in glob.glob('*.json'):
         json_reader(json_file)
-        # TODO
-        # delete the json_file after processing
+        # os.remove(json_file)
