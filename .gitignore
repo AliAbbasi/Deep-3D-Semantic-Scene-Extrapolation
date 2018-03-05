@@ -104,3 +104,5 @@ ENV/
 utils/*.json
 utils/*.csv
 utils/*.obj
+utils/*.exe
+utils/*.binvox
