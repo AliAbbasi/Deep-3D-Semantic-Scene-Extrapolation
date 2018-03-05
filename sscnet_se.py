@@ -27,7 +27,6 @@ if not os.path.exists(directory):
 
 # ====================================================================================================================
 
-
 def writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2):
     output = open(directory + "/costs.py", 'w')
     output.write("import matplotlib.pyplot as plt" + "\r\n")
@@ -85,9 +84,7 @@ def writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1
     output.write("plt.show()                                         " + "\r\n")
     print("accuracy.py file is created!")
 
-
 # ====================================================================================================================
-
 
 class ConvNet(object):
 
@@ -231,7 +228,6 @@ class ConvNet(object):
 
 # ====================================================================================================================
 
-
 def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2):
     print("Saving the model...")
     saver.save(sess, directory + '/my-model')
@@ -326,7 +322,6 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
                     break
 
 # ====================================================================================================================
-
 
 def show_result(sess):
     # Visualize Validation Set ---------------------------------
@@ -437,7 +432,6 @@ def show_result(sess):
         
 # ====================================================================================================================
 
-
 def accuFun(sess, trData, trLabel, batch_size):
     score = sess.run(ConvNet_class.score, feed_dict={x: trData, keepProb: 1.0, phase: False, batchSize: batch_size})
     score = np.reshape(score, (batch_size, 26, 30, 30, 14))
@@ -475,7 +469,6 @@ def accuFun(sess, trData, trLabel, batch_size):
     return totalAccuOveral, totalAccuOccupied
 
 # ====================================================================================================================
-
 
 if __name__ == '__main__':
 
