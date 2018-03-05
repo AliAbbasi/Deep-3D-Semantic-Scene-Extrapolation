@@ -9,44 +9,31 @@ import sys
 
 # ---------------------------------------------------------------------------------- 
 
-model_category_mapping = {}
-models = {}
+model_category_mapping = []
+models = []
 
 # ---------------------------------------------------------------------------------- 
 
 def csv_loader():
-    with open('ModelCategoryMapping.csv') as csvfile:
-        model_category_mapping = csv.DictReader(csvfile)
+    with open('ModelCategoryMapping.csv') as csv_file:
+        dict_reader = csv.DictReader(csv_file)
+        for row in dict_reader:
+            model_category_mapping.append(row)
         
-    with open('models.csv') as csvfile:
-        models = csv.DictReader(csvfile) 
-        for row in models:
-            print (type(row))
-            for key, value in row.items() :
-                print (key, value)
-            sys.exit(0)
-            print(row['minPoint'])
+    with open('models.csv') as csv_file:
+        dict_reader = csv.DictReader(csv_file)
+        for row in dict_reader:
+            models.append(row)
 
-    
-    
-    print (models )
-    print (models[0] )
+    print (models)
+    print (models[0])
     sys.exit(0)
 # ---------------------------------------------------------------------------------- 
 
-def json_reader(json_file):
-    rooms = []
-    data = json.load(open(json_file)) 
-    for level in data["levels"]: 
-        level["id"]
-        level["bbox"]
-        level["nodes"] 
-        # get floors here
-        
-        for node in level["nodes"]: 
-            # get rooms here
-            node["id"] # 0_0, 0_1, ...
-            node["type"] # Object, Box, Ground, Room
+def json_reader(json_file_input):
+    data = json.load(open(json_file_input))
+    for level in data["levels"]:
+        for node in level["nodes"]:
             if node["type"] == "Object":
                 pass
                 # TODO:
