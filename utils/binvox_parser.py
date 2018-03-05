@@ -1,5 +1,11 @@
+
+# adopted from:
+#        https://github.com/dimatura/binvox-rw-py
+
+# ----------------------------------------------------------------------------------
+
 import numpy as np
-import sys
+
 
 class Voxels(object):
     """ Holds a binvox model.
@@ -16,6 +22,7 @@ class Voxels(object):
     y = scale*y_n + translate[1]
     z = scale*z_n + translate[2]
     """
+
 
     def __init__(self, data, dims, translate, scale, axis_order):
         self.data = data
@@ -34,6 +41,7 @@ class Voxels(object):
     def write(self, fp):
         write(self, fp)
 
+
 def read_header(fp):
     """ Read binvox header. Mostly meant for internal use.
     """
@@ -46,6 +54,7 @@ def read_header(fp):
     line = fp.readline()
     return dims, translate, scale
 
+
 def read_as_3d_array(fp, fix_coords=True):
     """ Read binary binvox format as array.
     Returns the model with accompanying metadata.
@@ -57,17 +66,6 @@ def read_as_3d_array(fp, fix_coords=True):
     """
     dims, translate, scale = read_header(fp)
     raw_data = np.frombuffer(fp.read(), dtype=np.uint8)
-    # if just using reshape() on the raw data:
-    # indexing the array as array[i,j,k], the indices map into the
-    # coords as:
-    # i -> x
-    # j -> z
-    # k -> y
-    # if fix_coords is true, then data is rearranged so that
-    # mapping is
-    # i -> x
-    # j -> y
-    # k -> z
     values, counts = raw_data[::2], raw_data[1::2]
     data = np.repeat(values, counts).astype(np.bool)
     data = data.reshape(dims)
@@ -78,6 +76,7 @@ def read_as_3d_array(fp, fix_coords=True):
     else:
         axis_order = 'xzy'
     return Voxels(data, dims, translate, scale, axis_order)
+
 
 def read_as_coord_array(fp, fix_coords=True):
     """ Read binary binvox format as coordinates.
@@ -123,8 +122,8 @@ def read_as_coord_array(fp, fix_coords=True):
         data = np.vstack((x, z, y))
         axis_order = 'xzy'
 
-    #return Voxels(data, dims, translate, scale, axis_order)
     return Voxels(np.ascontiguousarray(data), dims, translate, scale, axis_order)
+
 
 def dense_to_sparse(voxel_data, dtype=np.int):
     """ From dense representation to sparse (coordinate) representation.
@@ -133,6 +132,7 @@ def dense_to_sparse(voxel_data, dtype=np.int):
     if voxel_data.ndim!=3:
         raise ValueError('voxel_data is wrong shape; should be 3D array.')
     return np.asarray(np.nonzero(voxel_data), dtype)
+
 
 def sparse_to_dense(voxel_data, dims, dtype=np.bool):
     if voxel_data.ndim!=2 or voxel_data.shape[0]!=3:
@@ -144,16 +144,11 @@ def sparse_to_dense(voxel_data, dims, dtype=np.bool):
     xyz = voxel_data.astype(np.int)
     # discard voxels that fall outside dims
     valid_ix = ~np.any((xyz < 0) | (xyz >= dims), 0)
-    xyz = xyz[:,valid_ix]
+    xyz = xyz[:, valid_ix]
     out = np.zeros(dims.flatten(), dtype=dtype)
     out[tuple(xyz)] = True
     return out
 
-#def get_linear_index(x, y, z, dims):
-    #""" Assuming xzy order. (y increasing fastest.
-    #TODO ensure this is right when dims are not all same
-    #"""
-    #return x*(dims[1]*dims[2]) + z*dims[1] + y
 
 def write(voxel_model, fp):
     """ Write binary binvox format.
@@ -202,54 +197,38 @@ def write(voxel_model, fp):
         fp.write(chr(state))
         fp.write(chr(ctr))
 
-if __name__ == '__main__':
-
-    with open('output.binvox', 'rb') as f:
-        voxel_model = read_as_coord_array(f) 
-        
-        # print (voxel_model.dims)
-        # print(type(voxel_model))
-        
-        resolution = 128
-        
-        data_sd = sparse_to_dense(voxel_model.data, resolution) 
-        
-        # print(type(data_sd))
-        # print((data_sd.shape))
-        # print(data_sd)
-        
-        
-        
-        # sys.exit(0)
-        
-        
-        
-        output    = open( "output.ply" , 'w') 
-        ply       = "" 
-        numOfVrtc = 0
-        
-        for idx1 in range(resolution):
-            for idx2 in range(resolution):    
-                for idx3 in range(resolution): 
-                    print (idx1, idx2, idx3)
-                    if data_sd[idx1][idx2][idx3]:  
-                        ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + " 0 128 0 255" + "\n"  
-                        numOfVrtc += 1 
-        output.write("ply"                                    + "\n")
-        output.write("format ascii 1.0"                       + "\n")
-        output.write("comment VCGLIB generated"               + "\n")
-        output.write("element vertex " +  str(numOfVrtc)      + "\n")
-        output.write("property float x"                       + "\n")
-        output.write("property float y"                       + "\n")
-        output.write("property float z"                       + "\n")
-        output.write("property uchar red"                     + "\n")
-        output.write("property uchar green"                   + "\n")
-        output.write("property uchar blue"                    + "\n")
-        output.write("property uchar alpha"                   + "\n")
-        output.write("element face 0"                         + "\n")
-        output.write("property list uchar int vertex_indices" + "\n")
-        output.write("end_header"                             + "\n") 
-        output.write( ply                                           ) 
-        output.close() 
-        print ("output.ply is Done.!") 
+# if __name__ == '__main__':
+#
+#     with open('100_1.binvox', 'rb') as f:
+#         voxel_model = read_as_coord_array(f)
+#         resolution = 32
+#         data_sd = sparse_to_dense(voxel_model.data, resolution)
+#         output    = open( "output.ply" , 'w')
+#         ply       = ""
+#         numOfVrtc = 0
+#
+#         for idx1 in range(resolution):
+#             for idx2 in range(resolution):
+#                 for idx3 in range(resolution):
+#                     print (idx1, idx2, idx3)
+#                     if data_sd[idx1][idx2][idx3]:
+#                         ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + " 0 128 0 255" + "\n"
+#                         numOfVrtc += 1
+#         output.write("ply"                                    + "\n")
+#         output.write("format ascii 1.0"                       + "\n")
+#         output.write("comment VCGLIB generated"               + "\n")
+#         output.write("element vertex " +  str(numOfVrtc)      + "\n")
+#         output.write("property float x"                       + "\n")
+#         output.write("property float y"                       + "\n")
+#         output.write("property float z"                       + "\n")
+#         output.write("property uchar red"                     + "\n")
+#         output.write("property uchar green"                   + "\n")
+#         output.write("property uchar blue"                    + "\n")
+#         output.write("property uchar alpha"                   + "\n")
+#         output.write("element face 0"                         + "\n")
+#         output.write("property list uchar int vertex_indices" + "\n")
+#         output.write("end_header"                             + "\n")
+#         output.write( ply                                           )
+#         output.close()
+#         print ("output.ply is Done.!")
     
