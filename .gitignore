@@ -106,3 +106,4 @@ utils/*.csv
 utils/*.obj
 utils/*.exe
 utils/*.binvox
+utils/*.npy
