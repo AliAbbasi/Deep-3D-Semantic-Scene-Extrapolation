@@ -6,12 +6,14 @@ import glob
 import os
 import csv
 import math
+from binvox_parser import *
 
 # ----------------------------------------------------------------------------------
 
 model_category_mapping = []
 models = []
 voxel_size = 6  # cm
+objects_voxel_size_dict = {}
 
 # ----------------------------------------------------------------------------------
 
@@ -48,19 +50,26 @@ def compute_size(input_obj_file):
     y_dim = math.sqrt((min_point[1] - max_point[1]) ** 2)
     z_dim = math.sqrt((min_point[2] - max_point[2]) ** 2)
     long_dim = max(x_dim, y_dim, z_dim)
-    return int((long_dim * 100) / voxel_size)
+    size = int((long_dim * 100) / voxel_size)
+    objects_voxel_size_dict[str(file_name)] = size
+    return size
 
 # ----------------------------------------------------------------------------------
 
 if __name__ == '__main__':
 
+    # obj_to_binvox
     csv_loader()
-    rooms_of_houses = []
     for obj_file in glob.glob('*.obj'):
-        size = compute_size(obj_file)
-        os.system("binvox.exe -d " + str(size) + " " + str(obj_file))
+        os.system("binvox.exe -d " + str(compute_size(obj_file)) + " " + str(obj_file))
         # os.remove(obj_file)
 
+    # binvox_to_npy
     for binvox_file in glob.glob('*.binvox'):
-        pass
-        # TODO: do binvox_to_npy
+        with open(binvox_file, 'rb') as f:
+            voxel_model = read_as_coord_array(f)
+
+        resolution = objects_voxel_size_dict[str(binvox_file[:-7])]
+        voxel_model = sparse_to_dense(voxel_model.data, resolution)
+        np.save(str(binvox_file[:-7]) + ".npy", voxel_model)
+        # os.remove(binvox_file)
