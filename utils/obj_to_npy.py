@@ -6,6 +6,8 @@ import glob
 import os
 import csv
 import math
+from multiprocessing import Pool
+
 from binvox_parser import *
 
 # ----------------------------------------------------------------------------------
@@ -56,25 +58,58 @@ def compute_size(input_obj_file):
 
 # ----------------------------------------------------------------------------------
 
-def command_runner(input_size, input_obj_file):
-    os.system("binvox.exe -d " + str(input_size) + " " + str(input_obj_file))
+def obj_to_binvox(input_obj_file):
+    os.system("binvox.exe -d " + str(compute_size(obj_file)) + " " + str(input_obj_file))
+    # os.remove(input_obj_file)
+
+# ----------------------------------------------------------------------------------
+
+def binvox_to_npy(input_binvox_file):
+    with open(input_binvox_file, 'rb') as f:
+        voxel_model = read_as_coord_array(f)
+    resolution = objects_voxel_size_dict[str(input_binvox_file[:-7])]
+    voxel_model = sparse_to_dense(voxel_model.data, resolution)
+    np.save(str(input_binvox_file[:-7]) + ".npy", voxel_model)
+    # os.remove(binvox_file)
 
 # ----------------------------------------------------------------------------------
 
 if __name__ == '__main__':
 
+    batch_size = 10
+    p = Pool(batch_size)
+    batch_arr = []
+    counter = 0
+
     # obj_to_binvox
     csv_loader()
     for obj_file in glob.glob('*.obj'):
-        command_runner(compute_size(obj_file), obj_file)
-        # os.remove(obj_file)
+        if counter < batch_size:
+            batch_arr.append(obj_file)
+            counter += 1
+        else:
+            counter = 0
+            p.map(obj_to_binvox, batch_arr)
+            batch_arr = [obj_file]
+            counter += 1
+    # one by one
+    if counter < batch_size:
+        for obj_file in batch_arr:
+            obj_to_binvox(obj_file)
 
+    batch_arr = []
+    counter = 0
     # binvox_to_npy
     for binvox_file in glob.glob('*.binvox'):
-        with open(binvox_file, 'rb') as f:
-            voxel_model = read_as_coord_array(f)
-
-        resolution = objects_voxel_size_dict[str(binvox_file[:-7])]
-        voxel_model = sparse_to_dense(voxel_model.data, resolution)
-        np.save(str(binvox_file[:-7]) + ".npy", voxel_model)
-        # os.remove(binvox_file)
+        if counter < batch_size:
+            batch_arr.append(binvox_file)
+            counter += 1
+        else:
+            counter = 0
+            p.map(binvox_to_npy, batch_arr)
+            batch_arr = [binvox_file]
+            counter += 1
+    # one by one
+    if counter < batch_size:
+        for binvox_file in batch_arr:
+            binvox_to_npy(binvox_file)
