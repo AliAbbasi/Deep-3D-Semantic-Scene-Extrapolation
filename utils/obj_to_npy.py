@@ -6,7 +6,6 @@ import glob
 import os
 import csv
 import math
-from multiprocessing import Pool
 
 from binvox_parser import *
 
