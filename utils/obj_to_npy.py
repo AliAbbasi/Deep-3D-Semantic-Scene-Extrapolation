@@ -59,7 +59,7 @@ def compute_size(input_obj_file):
 # ----------------------------------------------------------------------------------
 
 def obj_to_binvox(input_obj_file):
-    os.system("binvox.exe -d " + str(compute_size(obj_file)) + " " + str(input_obj_file))
+    os.system("binvox.exe -d " + str(compute_size(input_obj_file)) + " " + str(input_obj_file))
     # os.remove(input_obj_file)
 
 # ----------------------------------------------------------------------------------
