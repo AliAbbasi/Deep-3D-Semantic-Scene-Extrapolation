@@ -76,40 +76,11 @@ def binvox_to_npy(input_binvox_file):
 
 if __name__ == '__main__':
 
-    batch_size = 10
-    p = Pool(batch_size)
-    batch_arr = []
-    counter = 0
-
     # obj_to_binvox
     csv_loader()
     for obj_file in glob.glob('*.obj'):
-        if counter < batch_size:
-            batch_arr.append(obj_file)
-            counter += 1
-        else:
-            counter = 0
-            p.map(obj_to_binvox, batch_arr)
-            batch_arr = [obj_file]
-            counter += 1
-    # one by one
-    if counter < batch_size:
-        for obj_file in batch_arr:
-            obj_to_binvox(obj_file)
+        obj_to_binvox(obj_file)
 
-    batch_arr = []
-    counter = 0
     # binvox_to_npy
     for binvox_file in glob.glob('*.binvox'):
-        if counter < batch_size:
-            batch_arr.append(binvox_file)
-            counter += 1
-        else:
-            counter = 0
-            p.map(binvox_to_npy, batch_arr)
-            batch_arr = [binvox_file]
-            counter += 1
-    # one by one
-    if counter < batch_size:
-        for binvox_file in batch_arr:
-            binvox_to_npy(binvox_file)
+        binvox_to_npy(binvox_file)
