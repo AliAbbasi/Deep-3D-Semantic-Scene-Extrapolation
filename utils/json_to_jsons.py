@@ -30,18 +30,18 @@ def csv_loader():
 
 # ----------------------------------------------------------------------------------
 
-def json_reader(json_file):
-    data = json.load(open(json_file)) 
+def json_reader(input_json_file):
+    data = json.load(open(input_json_file))
     for level in data["levels"]:
         for node in level["nodes"]:
             if node["type"] == "Room":
-                get_room(node, json_file) 
+                get_room(node, input_json_file)
                 
 # ----------------------------------------------------------------------------------
 
-def get_room(room, json_file):
+def get_room(room, input_json_file):
     room_id = room["id"]   
-    data = json.load(open(json_file))  
+    data = json.load(open(input_json_file))
     output_json = open(str(data["id"]) + "_" + str(room_id) + ".json", 'w') 
     
     if "nodeIndices" in room:
