@@ -56,12 +56,17 @@ def compute_size(input_obj_file):
 
 # ----------------------------------------------------------------------------------
 
+def command_runner(input_size, input_obj_file):
+    os.system("binvox.exe -d " + str(input_size) + " " + str(input_obj_file))
+
+# ----------------------------------------------------------------------------------
+
 if __name__ == '__main__':
 
     # obj_to_binvox
     csv_loader()
     for obj_file in glob.glob('*.obj'):
-        os.system("binvox.exe -d " + str(compute_size(obj_file)) + " " + str(obj_file))
+        command_runner(compute_size(obj_file), obj_file)
         # os.remove(obj_file)
 
     # binvox_to_npy
