@@ -59,7 +59,7 @@ def compute_size(input_obj_file):
 
 def obj_to_binvox(input_obj_file):
     os.system("binvox.exe -d " + str(compute_size(input_obj_file)) + " " + str(input_obj_file))
-    # os.remove(input_obj_file)
+    os.remove(input_obj_file)
 
 # ----------------------------------------------------------------------------------
 
@@ -69,7 +69,7 @@ def binvox_to_npy(input_binvox_file):
     resolution = objects_voxel_size_dict[str(input_binvox_file[:-7])]
     voxel_model = sparse_to_dense(voxel_model.data, resolution)
     np.save(str(input_binvox_file[:-7]) + ".npy", voxel_model)
-    # os.remove(binvox_file)
+    os.remove(binvox_file)
 
 # ----------------------------------------------------------------------------------
 
