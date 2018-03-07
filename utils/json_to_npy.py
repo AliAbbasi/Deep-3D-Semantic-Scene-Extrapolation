@@ -73,7 +73,7 @@ def json_to_npy(json_file_input):
     for level in data["levels"]:
         for node in level["nodes"]:
             if node["type"] == "Object" and node["valid"] == 1:
-                # TODO ???
+
                 # fetch the transformation matrix from node["transform"]
                 transformation = np.asarray(node["transform"])
                 transformation = transformation.reshape(4, 4)
@@ -85,7 +85,7 @@ def json_to_npy(json_file_input):
                 for x in range(object_voxel.shape[0]):
                     for y in range(object_voxel.shape[1]):
                         for z in range(object_voxel.shape[2]):
-                            coordinate = np.ones(4)
+                            coordinate = np.ones((4, 1))
                             coordinate[0] = x
                             coordinate[1] = y
                             coordinate[2] = z
@@ -93,11 +93,12 @@ def json_to_npy(json_file_input):
                             new_coordinate = transformation.dot(coordinate)
                             new_coordinate = map(int, new_coordinate)
 
-                            scene[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = object_voxel[x, y, z]
+                            # scene[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = object_voxel[x, y, z]
+                            scene[new_coordinate[0] + object_voxel.shape[0],
+                                  new_coordinate[1] + object_voxel.shape[0],
+                                  new_coordinate[2] + object_voxel.shape[0]] = object_voxel[x, y, z]
 
-
-
-                pass
+    np.save(str(json_file_input[:-5]) + ".npy", scene)
 
 # ----------------------------------------------------------------------------------
 
