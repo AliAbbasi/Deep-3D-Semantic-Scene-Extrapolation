@@ -99,6 +99,8 @@ def json_to_npy(json_file_input):
                                   new_coordinate[2] + object_voxel.shape[0]] = object_voxel[x, y, z]
 
     np.save(str(json_file_input[:-5]) + ".npy", scene)
+    # TODO:
+    # put each voxelized object in the bbox of correspond place 
 
 # ----------------------------------------------------------------------------------
 
