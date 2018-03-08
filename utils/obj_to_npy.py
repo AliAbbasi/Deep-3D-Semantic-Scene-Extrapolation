@@ -46,6 +46,7 @@ def compute_size(input_obj_file):
         min_point = map(float, min_point)
         max_point = map(float, max_point)
 
+    # TODO: vectorized
     # find the longest dimension
     x_dim = math.sqrt((min_point[0] - max_point[0]) ** 2)
     y_dim = math.sqrt((min_point[1] - max_point[1]) ** 2)
