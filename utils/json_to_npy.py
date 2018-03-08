@@ -16,7 +16,6 @@ model_category_mapping = []
 models = []
 scene = np.zeros((200, 200, 200))
 
-
 # ----------------------------------------------------------------------------------
 
 def csv_loader():
@@ -30,7 +29,6 @@ def csv_loader():
         for row in dict_reader:
             models.append(row)
 
-
 # ----------------------------------------------------------------------------------
 
 def json_reader(input_json_file):
@@ -39,7 +37,6 @@ def json_reader(input_json_file):
         for node in level["nodes"]:
             if node["type"] == "Room":
                 get_room(node, input_json_file)
-
 
 # ----------------------------------------------------------------------------------
 
@@ -70,7 +67,6 @@ def get_room(room, input_json_file):
 
         json.dump(data, output_json)
 
-
 # ----------------------------------------------------------------------------------
 
 def json_to_npy(json_file_input):
@@ -100,23 +96,17 @@ def json_to_npy(json_file_input):
     # glob_bbox_min = map(int, glob_bbox_min)
     # glob_bbox_max = map(int, glob_bbox_max)
 
-                # put objects in their places
+    # put objects in their places
     for level in data["levels"]:
         for node in level["nodes"]:
             if node["type"] == "Object" and node["valid"] == 1:
                 # fetch the transformation matrix from node["transform"]
-                # transformation = np.asarray(node["transform"])
-                # transformation = transformation.reshape(4, 4)
+                transformation = np.asarray(node["transform"])
+                transformation = transformation.reshape(4, 4)
 
                 # find the node["modelId"] (is a string) from current directory
-                stjr = str(node["modelId"])
+                str_modelId = str(node["modelId"])
                 object_voxel = np.load(str(node["modelId"] + ".npy"))
-
-                # TODO:
-                # find the minimal bbox_min among all objects in room
-                # do the same for bbox_max
-                # now [max - min] will give us the scale of room
-                # arrange objects inside this scale
 
                 bbox = node["bbox"]
                 bbox_min = np.asarray(bbox["min"])
@@ -128,33 +118,37 @@ def json_to_npy(json_file_input):
                 bbox_min = map(int, (bbox_min * 100.0) / 6.0)
                 bbox_max = map(int, (bbox_max * 100.0) / 6.0)
 
-                # TODO: put object_voxel inside scene where object_voxel=true
-                scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
-                      bbox_min[1]: bbox_min[1] + object_voxel.shape[0],
-                      bbox_min[2]: bbox_min[2] + object_voxel.shape[0]] = object_voxel
+                # put object_voxel into scene where object_voxel = True
+                # part_scene = scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
+                #                    bbox_min[1]: bbox_min[1] + object_voxel.shape[0],
+                #                    bbox_min[2]: bbox_min[2] + object_voxel.shape[0]]
+                # part_scene[np.where(object_voxel == True)] = object_voxel[np.where(object_voxel == True)]
+                # scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
+                #       bbox_min[1]: bbox_min[1] + object_voxel.shape[0],
+                #       bbox_min[2]: bbox_min[2] + object_voxel.shape[0]] = part_scene
 
-                if stjr == 's__1939':
-                    np.save(str(json_file_input[:-5]) + ".npy", scene)
-                    sys.exit(0)
+                # TODO:
+                # we should do transformation,
+                # consider every computation
+
                 # multiply transformation with object_voxel coordinates
-                # for x in range(object_voxel.shape[0]):
-                #     for y in range(object_voxel.shape[1]):
-                #         for z in range(object_voxel.shape[2]):
-                #             coordinate = np.ones((4, 1))
-                #             coordinate[0] = x
-                #             coordinate[1] = y
-                #             coordinate[2] = z
-                #
-                #             new_coordinate = transformation.dot(coordinate)
-                #             new_coordinate = map(int, new_coordinate)
-                #
-                #             # scene[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = object_voxel[x, y, z]
-                #             scene[new_coordinate[0] + object_voxel.shape[0],
-                #                   new_coordinate[1] + object_voxel.shape[0],
-                #                   new_coordinate[2] + object_voxel.shape[0]] = object_voxel[x, y, z]
+                for x in range(object_voxel.shape[0]):
+                    for y in range(object_voxel.shape[1]):
+                        for z in range(object_voxel.shape[2]):
+                            coordinate = np.ones((4, 1))
+                            coordinate[0] = x
+                            coordinate[1] = y
+                            coordinate[2] = z
+
+                            new_coordinate = transformation.dot(coordinate)
+                            new_coordinate = map(int, new_coordinate)
+
+                            if object_voxel[x, y, z]:
+                                scene[new_coordinate[0] + object_voxel.shape[0] + bbox_min[0],
+                                      new_coordinate[1] + object_voxel.shape[0] + bbox_min[1],
+                                      new_coordinate[2] + object_voxel.shape[0] + bbox_min[2]] = object_voxel[x, y, z]
 
     np.save(str(json_file_input[:-5]) + ".npy", scene)
-    sys.exit(0)
 
 # ----------------------------------------------------------------------------------
 
@@ -170,3 +164,5 @@ if __name__ == '__main__':
     for json_file in glob.glob('*.json'):
         json_to_npy(json_file)
         # os.remove(json_file)
+
+    # TODO: give label to each voxel
