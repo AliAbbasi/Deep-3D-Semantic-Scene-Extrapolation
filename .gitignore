@@ -101,8 +101,7 @@ ENV/
 .mypy_cache/
 
 .idea
-utils/*.json
-utils/*.csv
+utils/*.json 
 utils/*.obj
 utils/*.exe
 utils/*.binvox
