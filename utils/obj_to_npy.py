@@ -19,12 +19,12 @@ objects_voxel_size_dict = {}
 # ----------------------------------------------------------------------------------
 
 def csv_loader():
-    with open('ModelCategoryMapping.csv') as csv_file:
+    with open('meta_data/ModelCategoryMapping.csv') as csv_file:
         dict_reader = csv.DictReader(csv_file)
         for row in dict_reader:
             model_category_mapping.append(row)
 
-    with open('models.csv') as csv_file:
+    with open('meta_data/models.csv') as csv_file:
         dict_reader = csv.DictReader(csv_file)
         for row in dict_reader:
             models.append(row)

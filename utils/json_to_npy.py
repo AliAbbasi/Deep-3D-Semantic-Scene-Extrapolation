@@ -19,12 +19,12 @@ scene = np.zeros((200, 200, 200))
 # ----------------------------------------------------------------------------------
 
 def csv_loader():
-    with open('ModelCategoryMapping.csv') as csv_file:
+    with open('meta_data/ModelCategoryMapping.csv') as csv_file:
         dict_reader = csv.DictReader(csv_file)
         for row in dict_reader:
             model_category_mapping.append(row)
 
-    with open('models.csv') as csv_file:
+    with open('meta_data/models.csv') as csv_file:
         dict_reader = csv.DictReader(csv_file)
         for row in dict_reader:
             models.append(row)
@@ -161,7 +161,7 @@ def json_to_npy_no_trans(json_file_input):
     for level in data["levels"]:
         for node in level["nodes"]:
             if node["type"] == "Object" and node["valid"] == 1:
-                object_voxel = np.load(str(node["modelId"] + ".npy"))
+                object_voxel = np.load("object/" + str(node["modelId"] + ".npy"))
 
                 # get default object aligned dims
                 for model in models:
