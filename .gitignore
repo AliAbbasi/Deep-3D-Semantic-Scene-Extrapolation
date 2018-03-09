@@ -108,3 +108,4 @@ utils/*.exe
 utils/*.binvox
 utils/*.npy
 utils/*.ply
+utils/object
