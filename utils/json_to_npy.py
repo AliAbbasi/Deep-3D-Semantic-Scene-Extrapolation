@@ -15,6 +15,7 @@ import math
 model_category_mapping = []
 models = []
 scene = np.zeros((200, 200, 200))
+build_ply = True
 
 # ----------------------------------------------------------------------------------
 
@@ -203,6 +204,37 @@ def json_to_npy_no_trans(json_file_input):
 
 # ----------------------------------------------------------------------------------
 
+def npy_to_ply(input_npy_file):
+    scene = np.load(input_npy_file) 
+    output = open( str(input_npy_file[:-4]) + ".ply" , 'w') 
+    ply = "" 
+    numOfVrtc = 0 
+    for idx1 in range(scene.shape[0]):
+        for idx2 in range(scene.shape[1]):    
+            for idx3 in range(scene.shape[2]): 
+                if scene[idx1][idx2][idx3] >= 1:  
+                    ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + " 0 128 0 255" + "\n"  
+                    numOfVrtc += 1 
+    output.write("ply"                                    + "\n")
+    output.write("format ascii 1.0"                       + "\n")
+    output.write("comment VCGLIB generated"               + "\n")
+    output.write("element vertex " +  str(numOfVrtc)      + "\n")
+    output.write("property float x"                       + "\n")
+    output.write("property float y"                       + "\n")
+    output.write("property float z"                       + "\n")
+    output.write("property uchar red"                     + "\n")
+    output.write("property uchar green"                   + "\n")
+    output.write("property uchar blue"                    + "\n")
+    output.write("property uchar alpha"                   + "\n")
+    output.write("element face 0"                         + "\n")
+    output.write("property list uchar int vertex_indices" + "\n")
+    output.write("end_header"                             + "\n")  
+    output.write( ply                                           ) 
+    output.close() 
+    print (str(input_npy_file[:-4]) + ".ply is Done.!") 
+
+# ----------------------------------------------------------------------------------
+
 if __name__ == '__main__':
 
     # json to json s
@@ -218,3 +250,7 @@ if __name__ == '__main__':
         # os.remove(json_file)
 
     # TODO: give label to each voxel
+    # npy to ply
+    if build_ply:
+        for npy_file in glob.glob('*.npy'):
+            npy_to_ply(npy_file)
