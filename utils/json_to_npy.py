@@ -69,7 +69,7 @@ def get_room(room, input_json_file):
 
 # ----------------------------------------------------------------------------------
 
-def json_to_npy(json_file_input):
+def json_to_npy_with_trans(json_file_input):
     data = json.load(open(json_file_input))
     glob_bbox_min = np.full(3, sys.maxint * 1.0)
     glob_bbox_max = np.full(3, -sys.maxint - 1 * 1.0)
@@ -121,7 +121,7 @@ def json_to_npy(json_file_input):
                 aligned_dims /= 6.0
                 max_dim = np.max(aligned_dims)
 
-                for x in range(int(-max_dim / 2), int(max_dim / 2)):  # TODO: start from i.g., -3 to +3,
+                for x in range(int(-max_dim / 2), int(max_dim / 2)):
                     for y in range(0, int(max_dim)):
                         for z in range(int(-max_dim / 2), int(max_dim / 2)):
                             coordinate = np.array([[x], [y], [z], [1]])
@@ -163,8 +163,23 @@ def json_to_npy_no_trans(json_file_input):
             if node["type"] == "Object" and node["valid"] == 1:
                 object_voxel = np.load(str(node["modelId"] + ".npy"))
 
+                # get default object aligned dims
+                for model in models:
+                    if str(model["id"]) == str(node["modelId"]):
+                        def_aligned_dims = np.around(np.asarray(map(float, model["aligned.dims"].split(","))))
+
                 bbox_min = np.asarray(node["bbox"]["min"])
                 bbox_max = np.asarray(node["bbox"]["max"])
+
+                # get current object aligned dims
+                cur_aligned_dims = np.around((bbox_max - bbox_min) * 100.0)
+
+                # check if the object is in right direction or not
+                if np.array_equal(def_aligned_dims, cur_aligned_dims):
+                    pass
+                elif def_aligned_dims[0] == cur_aligned_dims[2]:
+                    object_voxel = np.transpose(object_voxel, (2, 1, 0))
+                    object_voxel = np.flipud(object_voxel)
 
                 bbox_min -= glob_bbox_min
                 bbox_max -= glob_bbox_min
@@ -173,6 +188,8 @@ def json_to_npy_no_trans(json_file_input):
                 bbox_min = map(int, (bbox_min * 100.0) / 6.0)
                 bbox_max = map(int, (bbox_max * 100.0) / 6.0)
 
+                # TODO: do matrix transpose with respect to the length of bbox in models csv and object_voxel bbox
+                # TODO: what about diagonal objects
                 # put object_voxel into scene where object_voxel = True
                 part_scene = scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
                                    bbox_min[1]: bbox_min[1] + object_voxel.shape[0],
@@ -197,7 +214,7 @@ if __name__ == '__main__':
     csv_loader()
     for json_file in glob.glob('*.json'):
         json_to_npy_no_trans(json_file)
-        # json_to_npy(json_file)
+        # json_to_npy_with_trans(json_file)
         # os.remove(json_file)
 
     # TODO: give label to each voxel
