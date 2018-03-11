@@ -98,6 +98,10 @@ def json_to_npy_with_trans(json_file_input):
                 glob_bbox_max[1] = bbox_max[1] if bbox_max[1] > glob_bbox_max[1] else glob_bbox_max[1]
                 glob_bbox_max[2] = bbox_max[2] if bbox_max[2] > glob_bbox_max[2] else glob_bbox_max[2]
 
+    # determine scene size with respect to the glob_bbox_max - glob_bbox_min
+    scene_size = map(int, ((glob_bbox_max - glob_bbox_min) * 100.0) / 6.0)
+    scene = np.zeros(scene_size)
+
     # put objects in their places
     for level in data["levels"]:
         for node in level["nodes"]:
@@ -168,7 +172,7 @@ def json_to_npy_no_trans(json_file_input):
                 glob_bbox_max[1] = bbox_max[1] if bbox_max[1] > glob_bbox_max[1] else glob_bbox_max[1]
                 glob_bbox_max[2] = bbox_max[2] if bbox_max[2] > glob_bbox_max[2] else glob_bbox_max[2]
 
-    # TODO: determine scene size with respect to the glob_bbox_max - glob_bbox_min
+    # determine scene size with respect to the glob_bbox_max - glob_bbox_min
     scene_size = map(int, ((glob_bbox_max - glob_bbox_min) * 100.0) / 6.0)
     scene = np.zeros(scene_size)
 
@@ -189,15 +193,13 @@ def json_to_npy_no_trans(json_file_input):
                 # get current object aligned dims
                 cur_aligned_dims = np.around((bbox_max - bbox_min) * 100.0)
 
-                # check if the object is in right direction or not
-                if np.array_equal(def_aligned_dims, cur_aligned_dims):
-                    pass
-                elif def_aligned_dims[0] == cur_aligned_dims[2]:
-                    object_voxel = np.transpose(object_voxel, (2, 1, 0))
-                    object_voxel = np.flipud(object_voxel)
-
-                if any(i < 0 for i in glob_bbox_min):
-                    debbuger =1
+                # TODO: do matrix transpose with respect to the length of bbox in models csv and object_voxel bbox
+                # TODO: what about diagonal objects
+                # if np.array_equal(def_aligned_dims, cur_aligned_dims):
+                #     pass
+                # elif def_aligned_dims[0] == cur_aligned_dims[2]:
+                #     object_voxel = np.transpose(object_voxel, (2, 1, 0))
+                #     object_voxel = np.flipud(object_voxel)
 
                 bbox_min -= glob_bbox_min
                 bbox_max -= glob_bbox_min
@@ -206,20 +208,23 @@ def json_to_npy_no_trans(json_file_input):
                 bbox_min = map(int, (bbox_min * 100.0) / 6.0)
                 bbox_max = map(int, (bbox_max * 100.0) / 6.0)
 
-                # TODO: do matrix transpose with respect to the length of bbox in models csv and object_voxel bbox
-                # TODO: what about diagonal objects
+                # TODO: we must do transformation, first transformm object_voxel to another np array, then put it in related bbox
+
                 # put object_voxel into scene where object_voxel = True
                 part_scene = scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
                                    bbox_min[1]: bbox_min[1] + object_voxel.shape[0],
                                    bbox_min[2]: bbox_min[2] + object_voxel.shape[0]]
-                # TODO: in some case the place of object is out of scene size,
-                # TODO; in this case cut the object
+                # in some case the place of object is out of scene size, cut the object to fit
                 if part_scene.shape != object_voxel.shape:
-                    debbugers= 1
+                    object_voxel = object_voxel[:part_scene.shape[0], :part_scene.shape[1], :part_scene.shape[2]]
+                    part_scene = scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
+                                       bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
+                                       bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
+
                 part_scene[np.where(object_voxel)] = object_voxel[np.where(object_voxel)]
                 scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
-                      bbox_min[1]: bbox_min[1] + object_voxel.shape[0],
-                      bbox_min[2]: bbox_min[2] + object_voxel.shape[0]] = part_scene
+                      bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
+                      bbox_min[2]: bbox_min[2] + object_voxel.shape[2]] = part_scene
 
         np.save(str(json_file_input[:-5]) + ".npy", scene)
 
