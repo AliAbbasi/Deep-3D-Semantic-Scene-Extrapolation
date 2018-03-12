@@ -138,7 +138,6 @@ def json_to_npy_with_trans(json_file_input):
                         for z in range(int(-max_dim / 2), int(max_dim / 2)):
                             coordinate = np.array([[x], [y], [z], [1]])
                             new_coordinate = transformation.dot(coordinate)
-                            # new_coordinate *= 100.0 / 6.0
                             new_coordinate = map(int, new_coordinate)
 
                             if object_voxel[x + int(max_dim / 2), y, z + int(max_dim / 2)]:
@@ -149,6 +148,37 @@ def json_to_npy_with_trans(json_file_input):
 
     np.save(str(json_file_input[:-5]) + ".npy", scene)
 
+
+# ----------------------------------------------------------------------------------
+
+def trans_op(input_object_voxel, input_transformation, input_aligned_dims, input_bbox_min):
+    input_aligned_dims = np.asarray(input_aligned_dims, dtype=float)
+    input_aligned_dims /= 6.0
+    max_dim = np.max(input_aligned_dims)
+    bound = input_object_voxel.shape[0]
+    new_object_voxel = np.zeros((input_object_voxel.shape[0] + bound, input_object_voxel.shape[1] + bound, input_object_voxel.shape[2] + bound))
+
+    for x in range(int(-max_dim / 2), int(max_dim / 2)):
+        for y in range(0, int(max_dim)):
+            for z in range(int(-max_dim / 2), int(max_dim / 2)):
+                coordinate = np.array([[x], [y], [z], [1]])
+                new_coordinate = input_transformation.dot(coordinate)
+                # new_coordinate = np.asarray(map(int, new_coordinate))  # TODO: use np.around rather map to int
+                new_coordinate = np.asarray(map(int, np.around(new_coordinate)))  # TODO: use np.around rather map to int
+                int_max_dim = int(max_dim / 2.0)
+                new_coordinate += int_max_dim  # TODO; there is still negative coordiante problem
+                new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = \
+                    input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]
+
+    # for x in range(input_object_voxel.shape[0]):
+    #     for y in range(input_object_voxel.shape[1]):
+    #         for z in range(input_object_voxel.shape[2]):
+    #             coordinate = np.array([[x], [y], [z], [1]])
+    #             new_coordinate = input_transformation.dot(coordinate)
+    #             new_coordinate = np.asarray(map(int, new_coordinate))
+    #             new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = input_object_voxel[x, y, z]
+
+    return new_object_voxel
 
 # ----------------------------------------------------------------------------------
 
@@ -180,6 +210,13 @@ def json_to_npy_no_trans(json_file_input):
     for level in data["levels"]:
         for node in level["nodes"]:
             if node["type"] == "Object" and node["valid"] == 1:
+                # fetch the transformation matrix from node["transform"]
+                transformation = np.asarray(node["transform"]).reshape(4, 4)
+
+                # find the node["modelId"] (is a string) from current directory
+                str_modelId = str(node["modelId"])
+                if str_modelId == 's__1250':
+                    debugger = 23
                 object_voxel = np.load("object/" + str(node["modelId"] + ".npy"))
 
                 # get default object aligned dims
@@ -208,7 +245,42 @@ def json_to_npy_no_trans(json_file_input):
                 bbox_min = map(int, (bbox_min * 100.0) / 6.0)
                 bbox_max = map(int, (bbox_max * 100.0) / 6.0)
 
+                for model in models:
+                    if str(model["id"]) == str_modelId:
+                        aligned_dims = model["aligned.dims"].split(",")
+
                 # TODO: we must do transformation, first transformm object_voxel to another np array, then put it in related bbox
+                object_voxel = trans_op(object_voxel, transformation, aligned_dims, bbox_min)
+
+                # ==================================================
+                # TODO: visualize this object_voxel to check the validity of it
+                output = open(str(str_modelId) + ".ply", 'w')
+                ply = ""
+                ver_num = 0
+                for idx1 in range(object_voxel.shape[0]):
+                    for idx2 in range(object_voxel.shape[1]):
+                        for idx3 in range(object_voxel.shape[2]):
+                            if object_voxel[idx1][idx2][idx3] >= 1:
+                                ply = ply + str(idx1) + " " + str(idx2) + " " + str(idx3) + " 0 128 0 255" + "\n"
+                                ver_num += 1
+                output.write("ply" + "\n")
+                output.write("format ascii 1.0" + "\n")
+                output.write("comment VCGLIB generated" + "\n")
+                output.write("element vertex " + str(ver_num) + "\n")
+                output.write("property float x" + "\n")
+                output.write("property float y" + "\n")
+                output.write("property float z" + "\n")
+                output.write("property uchar red" + "\n")
+                output.write("property uchar green" + "\n")
+                output.write("property uchar blue" + "\n")
+                output.write("property uchar alpha" + "\n")
+                output.write("element face 0" + "\n")
+                output.write("property list uchar int vertex_indices" + "\n")
+                output.write("end_header" + "\n")
+                output.write(ply)
+                output.close()
+                print (str(str_modelId) + ".ply is Done.!")
+                # ==================================================
 
                 # put object_voxel into scene where object_voxel = True
                 part_scene = scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
