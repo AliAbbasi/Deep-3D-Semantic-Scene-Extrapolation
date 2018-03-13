@@ -331,8 +331,27 @@ def npy_to_ply(input_npy_file):
 
 
 # ----------------------------------------------------------------------------------
+def bbox2_3D(img):
+
+    r = np.any(img, axis=(1, 2))
+    c = np.any(img, axis=(0, 2))
+    z = np.any(img, axis=(0, 1))
+
+    rmin, rmax = np.where(r)[0][[0, -1]]
+    cmin, cmax = np.where(c)[0][[0, -1]]
+    zmin, zmax = np.where(z)[0][[0, -1]]
+
+    return rmin, rmax, cmin, cmax, zmin, zmax
 
 if __name__ == '__main__':
+
+    a = np.array([[1, 1, 0], [1, 1, 0], [0, 0, 0]])
+    b, c, d, e, f, g = bbox2_3D(a)
+    a = a[b:c, d:e, f:g]
+    print (a)
+    sys.exit(0)
+
+    # -------------------
 
     # json to json s
     if build_json_to_jsons:
