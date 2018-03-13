@@ -156,17 +156,18 @@ def trans_op(input_object_voxel, input_transformation, input_aligned_dims, input
     input_aligned_dims /= 6.0
     max_dim = np.max(input_aligned_dims)
     bound = input_object_voxel.shape[0]
-    new_object_voxel = np.zeros((input_object_voxel.shape[0] + bound, input_object_voxel.shape[1] + bound, input_object_voxel.shape[2] + bound))
+    new_object_voxel = np.zeros((input_object_voxel.shape[0] + bound,
+                                 input_object_voxel.shape[1] + bound,
+                                 input_object_voxel.shape[2] + bound))
 
     for x in range(int(-max_dim / 2), int(max_dim / 2)):
         for y in range(0, int(max_dim)):
             for z in range(int(-max_dim / 2), int(max_dim / 2)):
                 coordinate = np.array([[x], [y], [z], [1]])
                 new_coordinate = input_transformation.dot(coordinate)
-                # new_coordinate = np.asarray(map(int, new_coordinate))  # TODO: use np.around rather map to int
-                new_coordinate = np.asarray(map(int, np.around(new_coordinate)))  # TODO: use np.around rather map to int
+                new_coordinate = np.asarray(map(int, np.around(new_coordinate)))
                 int_max_dim = int(max_dim / 2.0)
-                new_coordinate += int_max_dim  # TODO; there is still negative coordiante problem
+                new_coordinate += int_max_dim  # TODO; there is still negative coordinate problem
                 new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = \
                     input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]
 
@@ -175,7 +176,9 @@ def trans_op(input_object_voxel, input_transformation, input_aligned_dims, input
     #         for z in range(input_object_voxel.shape[2]):
     #             coordinate = np.array([[x], [y], [z], [1]])
     #             new_coordinate = input_transformation.dot(coordinate)
-    #             new_coordinate = np.asarray(map(int, new_coordinate))
+    #             new_coordinate = np.asarray(map(int, np.around(new_coordinate)))
+    #             int_max_dim = int(max_dim / 2.0)
+    #             new_coordinate += int_max_dim
     #             new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = input_object_voxel[x, y, z]
 
     return new_object_voxel
@@ -252,6 +255,9 @@ def json_to_npy_no_trans(json_file_input):
                 # TODO: we must do transformation, first transformm object_voxel to another np array, then put it in related bbox
                 object_voxel = trans_op(object_voxel, transformation, aligned_dims, bbox_min)
 
+                # TODO: after transformation there is a lot of empty space in the object bbox, remove that spaces.
+                # TODO: how???
+                
                 # ==================================================
                 # TODO: visualize this object_voxel to check the validity of it
                 output = open(str(str_modelId) + ".ply", 'w')
@@ -284,8 +290,8 @@ def json_to_npy_no_trans(json_file_input):
 
                 # put object_voxel into scene where object_voxel = True
                 part_scene = scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
-                                   bbox_min[1]: bbox_min[1] + object_voxel.shape[0],
-                                   bbox_min[2]: bbox_min[2] + object_voxel.shape[0]]
+                                   bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
+                                   bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
                 # in some case the place of object is out of scene size, cut the object to fit
                 if part_scene.shape != object_voxel.shape:
                     object_voxel = object_voxel[:part_scene.shape[0], :part_scene.shape[1], :part_scene.shape[2]]
