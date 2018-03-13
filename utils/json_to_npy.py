@@ -168,6 +168,7 @@ def trans_op(input_object_voxel, input_transformation, input_aligned_dims, input
                 new_coordinate = np.asarray(map(int, np.around(new_coordinate)))
                 int_max_dim = int(max_dim / 2.0)
                 new_coordinate += int_max_dim
+                # TODO; IndexError: index 84 is out of bounds for axis 1 with size 84
                 new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = \
                     input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]
 
@@ -246,37 +247,38 @@ def json_to_npy_no_trans(json_file_input):
 
                 # transformation
                 object_voxel = trans_op(object_voxel, transformation, aligned_dims, bbox_min)
+                object_voxel = slice_non_zeroes(object_voxel)
 
                 # TODO: after transformation there is a lot of empty space in the object bbox, remove that spaces.
                 # TODO: how???
 
                 # ==================================================
-                output = open(str(str_modelId) + ".ply", 'w')
-                ply = ""
-                ver_num = 0
-                for idx1 in range(object_voxel.shape[0]):
-                    for idx2 in range(object_voxel.shape[1]):
-                        for idx3 in range(object_voxel.shape[2]):
-                            if object_voxel[idx1][idx2][idx3] >= 1:
-                                ply = ply + str(idx1) + " " + str(idx2) + " " + str(idx3) + " 0 128 0 255" + "\n"
-                                ver_num += 1
-                output.write("ply" + "\n")
-                output.write("format ascii 1.0" + "\n")
-                output.write("comment VCGLIB generated" + "\n")
-                output.write("element vertex " + str(ver_num) + "\n")
-                output.write("property float x" + "\n")
-                output.write("property float y" + "\n")
-                output.write("property float z" + "\n")
-                output.write("property uchar red" + "\n")
-                output.write("property uchar green" + "\n")
-                output.write("property uchar blue" + "\n")
-                output.write("property uchar alpha" + "\n")
-                output.write("element face 0" + "\n")
-                output.write("property list uchar int vertex_indices" + "\n")
-                output.write("end_header" + "\n")
-                output.write(ply)
-                output.close()
-                print (str(str_modelId) + ".ply is Done.!")
+                # output = open(str(str_modelId) + ".ply", 'w')
+                # ply = ""
+                # ver_num = 0
+                # for idx1 in range(object_voxel.shape[0]):
+                #     for idx2 in range(object_voxel.shape[1]):
+                #         for idx3 in range(object_voxel.shape[2]):
+                #             if object_voxel[idx1][idx2][idx3] >= 1:
+                #                 ply = ply + str(idx1) + " " + str(idx2) + " " + str(idx3) + " 0 128 0 255" + "\n"
+                #                 ver_num += 1
+                # output.write("ply" + "\n")
+                # output.write("format ascii 1.0" + "\n")
+                # output.write("comment VCGLIB generated" + "\n")
+                # output.write("element vertex " + str(ver_num) + "\n")
+                # output.write("property float x" + "\n")
+                # output.write("property float y" + "\n")
+                # output.write("property float z" + "\n")
+                # output.write("property uchar red" + "\n")
+                # output.write("property uchar green" + "\n")
+                # output.write("property uchar blue" + "\n")
+                # output.write("property uchar alpha" + "\n")
+                # output.write("element face 0" + "\n")
+                # output.write("property list uchar int vertex_indices" + "\n")
+                # output.write("end_header" + "\n")
+                # output.write(ply)
+                # output.close()
+                # print (str(str_modelId) + ".ply is Done.!")
                 # ==================================================
 
                 # put object_voxel into scene where object_voxel = True
@@ -331,33 +333,22 @@ def npy_to_ply(input_npy_file):
 
 
 # ----------------------------------------------------------------------------------
-def bbox2_3D(img):
 
-    r = np.any(img, axis=(1, 2))
-    c = np.any(img, axis=(0, 2))
-    z = np.any(img, axis=(0, 1))
+def slice_non_zeroes(input_np):
+    ones = np.argwhere(input_np)
+    (x_start, y_start, z_start), (x_stop, y_stop, z_stop) = ones.min(0), ones.max(0) + 1
+    return input_np[x_start:x_stop, y_start:y_stop, z_start:z_stop]
 
-    rmin, rmax = np.where(r)[0][[0, -1]]
-    cmin, cmax = np.where(c)[0][[0, -1]]
-    zmin, zmax = np.where(z)[0][[0, -1]]
+# ----------------------------------------------------------------------------------
 
-    return rmin, rmax, cmin, cmax, zmin, zmax
 
 if __name__ == '__main__':
-
-    a = np.array([[1, 1, 0], [1, 1, 0], [0, 0, 0]])
-    b, c, d, e, f, g = bbox2_3D(a)
-    a = a[b:c, d:e, f:g]
-    print (a)
-    sys.exit(0)
-
-    # -------------------
 
     # json to json s
     if build_json_to_jsons:
         for json_file in glob.glob('*.json'):
             json_reader(json_file)
-            # os.remove(json_file)
+            os.remove(json_file)
 
     # json to npy
     csv_loader()
