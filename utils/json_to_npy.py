@@ -167,7 +167,7 @@ def trans_op(input_object_voxel, input_transformation, input_aligned_dims, input
                 new_coordinate = input_transformation.dot(coordinate)
                 new_coordinate = np.asarray(map(int, np.around(new_coordinate)))
                 int_max_dim = int(max_dim / 2.0)
-                new_coordinate += int_max_dim  # TODO; there is still negative coordinate problem
+                new_coordinate += int_max_dim
                 new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = \
                     input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]
 
@@ -233,14 +233,6 @@ def json_to_npy_no_trans(json_file_input):
                 # get current object aligned dims
                 cur_aligned_dims = np.around((bbox_max - bbox_min) * 100.0)
 
-                # TODO: do matrix transpose with respect to the length of bbox in models csv and object_voxel bbox
-                # TODO: what about diagonal objects
-                # if np.array_equal(def_aligned_dims, cur_aligned_dims):
-                #     pass
-                # elif def_aligned_dims[0] == cur_aligned_dims[2]:
-                #     object_voxel = np.transpose(object_voxel, (2, 1, 0))
-                #     object_voxel = np.flipud(object_voxel)
-
                 bbox_min -= glob_bbox_min
                 bbox_max -= glob_bbox_min
 
@@ -252,14 +244,13 @@ def json_to_npy_no_trans(json_file_input):
                     if str(model["id"]) == str_modelId:
                         aligned_dims = model["aligned.dims"].split(",")
 
-                # TODO: we must do transformation, first transformm object_voxel to another np array, then put it in related bbox
+                # transformation
                 object_voxel = trans_op(object_voxel, transformation, aligned_dims, bbox_min)
 
                 # TODO: after transformation there is a lot of empty space in the object bbox, remove that spaces.
                 # TODO: how???
-                
+
                 # ==================================================
-                # TODO: visualize this object_voxel to check the validity of it
                 output = open(str(str_modelId) + ".ply", 'w')
                 ply = ""
                 ver_num = 0
