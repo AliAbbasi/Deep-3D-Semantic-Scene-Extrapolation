@@ -155,7 +155,7 @@ def trans_op(input_object_voxel, input_transformation, input_aligned_dims, input
     input_aligned_dims = np.asarray(input_aligned_dims, dtype=float)
     input_aligned_dims /= 6.0
     max_dim = np.max(input_aligned_dims)
-    # TODO:
+    # TODO: reading max_dim from aligned_dims is a mistake, cuz we did read it from bbox_max - bbox_min
     if int(max_dim) >= input_object_voxel.shape[0]:
         debugger = 1
     bound = input_object_voxel.shape[0]
