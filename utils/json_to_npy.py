@@ -155,6 +155,9 @@ def trans_op(input_object_voxel, input_transformation, input_aligned_dims, input
     input_aligned_dims = np.asarray(input_aligned_dims, dtype=float)
     input_aligned_dims /= 6.0
     max_dim = np.max(input_aligned_dims)
+    # TODO:
+    if int(max_dim) >= input_object_voxel.shape[0]:
+        debugger = 1
     bound = input_object_voxel.shape[0]
     new_object_voxel = np.zeros((input_object_voxel.shape[0] + bound,
                                  input_object_voxel.shape[1] + bound,
