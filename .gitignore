@@ -101,6 +101,7 @@ ENV/
 .mypy_cache/
 
 .idea
+.vscode
 utils/*.json 
 utils/*.obj
 utils/*.exe
