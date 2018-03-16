@@ -80,9 +80,9 @@ def get_room(room, input_json_file):
 def trans_op(input_object_voxel, input_transformation):
     # TODO: there is some staff that cause to have voxels in negative dimension
     max_dim = np.max(input_object_voxel.shape)
-    new_object_voxel = np.zeros((input_object_voxel.shape[0] + max_dim * 2,
-                                 input_object_voxel.shape[1] + max_dim * 2,
-                                 input_object_voxel.shape[2] + max_dim * 2))
+    new_object_voxel = np.zeros((input_object_voxel.shape[0] + max_dim * 3,
+                                 input_object_voxel.shape[1] + max_dim * 3,
+                                 input_object_voxel.shape[2] + max_dim * 3))
 
     for x in range(int(-max_dim / 2), int(max_dim / 2)):
         for y in range(0, int(max_dim)):
@@ -92,11 +92,13 @@ def trans_op(input_object_voxel, input_transformation):
                 new_coordinate = np.asarray(map(int, np.around(new_coordinate)))
                 # int_max_dim = int(max_dim / 2.0)
                 # new_coordinate += int_max_dim
-                new_coordinate += max_dim
+                new_coordinate += max_dim + int(max_dim / 2) + 1
                 # print ("max_dim:", max_dim, " x:", x + int(max_dim/2), " y:", y, " z:", z + int(max_dim/2),
                 #        " new_coordinate:", new_coordinate)
                 if any(i < 0 for i in new_coordinate[0:3]):
                     debugger = 1
+                if any(i > (input_object_voxel.shape[0] + max_dim * 3) for i in new_coordinate[0:3]):
+                    debugger = 2
                 new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = \
                     input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]
 
@@ -173,7 +175,7 @@ def json_to_npy(json_file_input):
                 # transformation
                 object_voxel = trans_op(object_voxel, transformation)
                 object_voxel = slice_non_zeroes(object_voxel)
-                # object_voxel = np.flip(object_voxel, 0)
+                object_voxel = np.flip(object_voxel, 0)
 
                 # ==================================================
                 # output = open(str(str_modelId) + ".ply", 'w')
@@ -279,17 +281,17 @@ def slice_non_zeroes(input_np):
 if __name__ == '__main__':
 
     # json to json s
-    if build_json_to_jsons:
-        for json_file in glob.glob('*.json'):
-            json_reader(json_file)
-            os.remove(json_file)
+    # if build_json_to_jsons:
+    #     for json_file in glob.glob('*.json'):
+    #         json_reader(json_file)
+    #         os.remove(json_file)
 
     # json to npy
-    csv_loader()
-    for json_file in glob.glob('*.json'):
-        print (str(json_file))
-        json_to_npy(json_file)
-        # os.remove(json_file)
+    # csv_loader()
+    # for json_file in glob.glob('*.json'):
+    #     print (str(json_file))
+    #     json_to_npy(json_file)
+    #     # os.remove(json_file)
 
     # TODO: give label to each voxel
 
