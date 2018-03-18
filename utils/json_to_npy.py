@@ -90,7 +90,8 @@ def trans_op(input_object_voxel, input_transformation):
             for z in range(int(-max_dim / 2), int(max_dim / 2)):
                 coordinate = np.array([[x], [y], [z], [1]])
                 new_coordinate = input_transformation.dot(coordinate)
-                new_coordinate = np.asarray(map(int, np.around(new_coordinate)))
+                new_coordinate = np.around(new_coordinate)
+                new_coordinate = np.asarray(map(int, new_coordinate))
                 new_coordinate += max_dim + int(max_dim / 2) + 1
                 # TODO: there is two problems, 1: the new_coors are negative, 2: new_coors are larger than expected
                 if any(i < 0 for i in new_coordinate[0:3]) or any(i > (input_object_voxel.shape[0] + max_dim * 3) for i in new_coordinate[0:3]):
@@ -147,8 +148,6 @@ def json_to_npy(json_file_input):
 
                 # find the node["modelId"] (is a string) from current directory
                 str_modelId = str(node["modelId"])
-                if str_modelId == 's__1250':
-                    debugger = 23
                 object_voxel = np.load("object/" + str(node["modelId"] + ".npy"))
 
                 # get default object aligned dims
@@ -161,7 +160,7 @@ def json_to_npy(json_file_input):
 
                 # get current object aligned dims
                 cur_aligned_dims = np.around((bbox_max - bbox_min) * 100.0)
-                # TODO: ???
+                # TODO: cur_aligned_dims for what ???
 
                 bbox_min -= glob_bbox_min
                 bbox_max -= glob_bbox_min
@@ -169,6 +168,10 @@ def json_to_npy(json_file_input):
                 # TODO: care about the negative numbers in bbox
                 bbox_min = map(int, (bbox_min * 100.0) / 6.0)
                 bbox_max = map(int, (bbox_max * 100.0) / 6.0)
+
+
+                if str_modelId == '238':
+                    debugger = 23
 
                 # transformation
                 object_voxel = trans_op(object_voxel, transformation)
@@ -289,7 +292,7 @@ if __name__ == '__main__':
     for json_file in glob.glob('*.json'):
         print (str(json_file))
         json_to_npy(json_file)
-        os.remove(json_file)
+        # os.remove(json_file)
 
     # TODO: give label to each voxel
 
