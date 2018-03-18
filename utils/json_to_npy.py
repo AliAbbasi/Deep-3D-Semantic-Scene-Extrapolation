@@ -85,6 +85,7 @@ def trans_op(input_object_voxel, input_transformation):
                                  input_object_voxel.shape[1] + max_dim * 3,
                                  input_object_voxel.shape[2] + max_dim * 3))
 
+    # TODO: after transformation does it make sense to keep the coordinate as float, then convert them into int, once
     for x in range(int(-max_dim / 2), int(max_dim / 2)):
         for y in range(0, int(max_dim)):
             for z in range(int(-max_dim / 2), int(max_dim / 2)):
@@ -93,12 +94,19 @@ def trans_op(input_object_voxel, input_transformation):
                 new_coordinate = np.around(new_coordinate)
                 new_coordinate = np.asarray(map(int, new_coordinate))
                 new_coordinate += max_dim + int(max_dim / 2) + 1
+                if new_coordinate[0] == 40 and new_coordinate[1] == 62 and new_coordinate[2] == 42:
+                    debug = 1
+                # print (new_coordinate)
                 # TODO: there is two problems, 1: the new_coors are negative, 2: new_coors are larger than expected
                 if any(i < 0 for i in new_coordinate[0:3]) or any(i > (input_object_voxel.shape[0] + max_dim * 3) for i in new_coordinate[0:3]):
                     pass
                 else:
                     new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = \
                         input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]
+
+                    # for debug
+                    if input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]:
+                        print (x + int(max_dim/2), y, z + int(max_dim/2), " /// ", new_coordinate[0], new_coordinate[1], new_coordinate[2])
 
     # for x in range(input_object_voxel.shape[0]):
     #     for y in range(input_object_voxel.shape[1]):
