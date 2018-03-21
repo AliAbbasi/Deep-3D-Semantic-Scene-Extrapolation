@@ -157,6 +157,14 @@ def json_to_npy(json_file_input):
                 # fetch the transformation matrix from node["transform"]
                 transformation = np.asarray(node["transform"]).reshape(4, 4)
 
+                # ----------------------------------------
+                # TODO: I think we need float trans matrix for diagonal transformation
+                # TODO: So convert float to int means that there is no diagonal transformation
+                # TODO: Maybe filling the empty spaces between voxels after transformation is better solution
+                # transformation = np.around(transformation)
+                # transformation = transformation.astype(np.int64)
+                # ----------------------------------------
+
                 # find the node["modelId"] (is a string) from current directory
                 str_modelId = str(node["modelId"])
                 object_voxel = np.load("object/" + str(node["modelId"] + ".npy"))
@@ -179,7 +187,6 @@ def json_to_npy(json_file_input):
                 # TODO: care about the negative numbers in bbox
                 bbox_min = map(int, (bbox_min * 100.0) / 6.0)
                 bbox_max = map(int, (bbox_max * 100.0) / 6.0)
-
 
                 if str_modelId == '238':
                     debugger = 23
@@ -237,6 +244,7 @@ def json_to_npy(json_file_input):
                                        bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
                                        bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
 
+                # TODO: give label to each voxel
                 # random color to each voxel, TODO: fix it later
                 random_color = random.randint(1, 13)
                 part_scene[np.where(object_voxel)] = object_voxel[np.where(object_voxel)]
@@ -300,9 +308,13 @@ def npy_to_ply(input_npy_file):
 # ----------------------------------------------------------------------------------
 
 def slice_non_zeroes(input_np):
+    # TODO: is this if in right way ???
     ones = np.argwhere(input_np)
-    (x_start, y_start, z_start), (x_stop, y_stop, z_stop) = ones.min(0), ones.max(0) + 1
-    return input_np[x_start:x_stop, y_start:y_stop, z_start:z_stop]
+    if ones.size > 0:
+        (x_start, y_start, z_start), (x_stop, y_stop, z_stop) = ones.min(0), ones.max(0) + 1
+        return input_np[x_start:x_stop, y_start:y_stop, z_start:z_stop]
+    else:
+        return input_np
 
 
 # ----------------------------------------------------------------------------------
@@ -320,9 +332,7 @@ if __name__ == '__main__':
     for json_file in glob.glob('*.json'):
         print (str(json_file))
         json_to_npy(json_file)
-        os.remove(json_file)
-
-    # TODO: give label to each voxel
+        # os.remove(json_file)
 
     # npy to ply
     if build_ply:
