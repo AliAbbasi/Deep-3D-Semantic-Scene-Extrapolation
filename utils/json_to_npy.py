@@ -8,6 +8,7 @@ import sys
 import os
 import numpy as np
 import csv
+import random
 
 # ----------------------------------------------------------------------------------
 
@@ -16,7 +17,6 @@ models = []
 # scene = np.zeros((300, 300, 300))
 build_ply = True
 build_json_to_jsons = True
-
 
 # ----------------------------------------------------------------------------------
 
@@ -106,10 +106,10 @@ def trans_op(input_object_voxel, input_transformation):
                         input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]
 
                     # for debug
-                    if input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]:
-                        print (x + int(max_dim/2), y, z + int(max_dim/2),
-                               " /// ", new_coordinate[0], new_coordinate[1], new_coordinate[2],
-                               " /// ", tt[0][0], tt[1][0], tt[2][0])
+                    # if input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]:
+                    #     print (x + int(max_dim/2), y, z + int(max_dim/2),
+                    #            " /// ", new_coordinate[0], new_coordinate[1], new_coordinate[2],
+                    #            " /// ", tt[0][0], tt[1][0], tt[2][0])
 
     # for x in range(input_object_voxel.shape[0]):
     #     for y in range(input_object_voxel.shape[1]):
@@ -190,40 +190,40 @@ def json_to_npy(json_file_input):
                 object_voxel = np.flip(object_voxel, 0)
 
                 # ==================================================
-                output = open(str(str_modelId) + ".ply", 'w')
-                ply = ""
-                ver_num = 0
-                for idx1 in range(object_voxel.shape[0]):
-                    for idx2 in range(object_voxel.shape[1]):
-                        for idx3 in range(object_voxel.shape[2]):
-                            if object_voxel[idx1][idx2][idx3] >= 1:
-                                ply = ply + str(idx1) + " " + str(idx2) + " " + str(idx3) + " 0 128 0 255" + "\n"
-                                ver_num += 1
-                output.write("ply" + "\n")
-                output.write("format ascii 1.0" + "\n")
-                output.write("comment VCGLIB generated" + "\n")
-                output.write("element vertex " + str(ver_num+8) + "\n")
-                output.write("property float x" + "\n")
-                output.write("property float y" + "\n")
-                output.write("property float z" + "\n")
-                output.write("property uchar red" + "\n")
-                output.write("property uchar green" + "\n")
-                output.write("property uchar blue" + "\n")
-                output.write("property uchar alpha" + "\n")
-                output.write("element face 0" + "\n")
-                output.write("property list uchar int vertex_indices" + "\n")
-                output.write("end_header" + "\n")
-                output.write(ply)
-                output.write("0 0 0 0 128 0 255 \n")
-                output.write("0 0 "+str(object_voxel.shape[2])+" 0 128 0 255 \n")
-                output.write("0 "+str(object_voxel.shape[1])+" 0 0 128 0 255 \n")
-                output.write(str(object_voxel.shape[0])+" 0 0 0 128 0 255 \n")
-                output.write(str(object_voxel.shape[0])+" " +str(object_voxel.shape[1])+" "+str(object_voxel.shape[2])+" 0 128 0 255 \n")
-                output.write("0 " +str(object_voxel.shape[1])+" "+str(object_voxel.shape[2])+" 0 128 0 255 \n")
-                output.write(str(object_voxel.shape[0])+" 0 "+ str(object_voxel.shape[2])+" 0 128 0 255 \n")
-                output.write(str(object_voxel.shape[0])+" " +str(object_voxel.shape[1])+" 0 0 128 0 255 \n")
-                output.close()
-                print (str(str_modelId) + ".ply is Done.!")
+                # output = open(str(str_modelId) + ".ply", 'w')
+                # ply = ""
+                # ver_num = 0
+                # for idx1 in range(object_voxel.shape[0]):
+                #     for idx2 in range(object_voxel.shape[1]):
+                #         for idx3 in range(object_voxel.shape[2]):
+                #             if object_voxel[idx1][idx2][idx3] >= 1:
+                #                 ply = ply + str(idx1) + " " + str(idx2) + " " + str(idx3) + " 0 128 0 255" + "\n"
+                #                 ver_num += 1
+                # output.write("ply" + "\n")
+                # output.write("format ascii 1.0" + "\n")
+                # output.write("comment VCGLIB generated" + "\n")
+                # output.write("element vertex " + str(ver_num+8) + "\n")
+                # output.write("property float x" + "\n")
+                # output.write("property float y" + "\n")
+                # output.write("property float z" + "\n")
+                # output.write("property uchar red" + "\n")
+                # output.write("property uchar green" + "\n")
+                # output.write("property uchar blue" + "\n")
+                # output.write("property uchar alpha" + "\n")
+                # output.write("element face 0" + "\n")
+                # output.write("property list uchar int vertex_indices" + "\n")
+                # output.write("end_header" + "\n")
+                # output.write(ply)
+                # output.write("0 0 0 0 128 0 255 \n")
+                # output.write("0 0 "+str(object_voxel.shape[2])+" 0 128 0 255 \n")
+                # output.write("0 "+str(object_voxel.shape[1])+" 0 0 128 0 255 \n")
+                # output.write(str(object_voxel.shape[0])+" 0 0 0 128 0 255 \n")
+                # output.write(str(object_voxel.shape[0])+" " +str(object_voxel.shape[1])+" "+str(object_voxel.shape[2])+" 0 128 0 255 \n")
+                # output.write("0 " +str(object_voxel.shape[1])+" "+str(object_voxel.shape[2])+" 0 128 0 255 \n")
+                # output.write(str(object_voxel.shape[0])+" 0 "+ str(object_voxel.shape[2])+" 0 128 0 255 \n")
+                # output.write(str(object_voxel.shape[0])+" " +str(object_voxel.shape[1])+" 0 0 128 0 255 \n")
+                # output.close()
+                # print (str(str_modelId) + ".ply is Done.!")
                 # ==================================================
 
                 # put object_voxel into scene where object_voxel = True
@@ -237,7 +237,10 @@ def json_to_npy(json_file_input):
                                        bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
                                        bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
 
+                # random color to each voxel, TODO: fix it later
+                random_color = random.randint(1, 13)
                 part_scene[np.where(object_voxel)] = object_voxel[np.where(object_voxel)]
+                part_scene[np.where(part_scene)] = random_color
                 scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
                       bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
                       bbox_min[2]: bbox_min[2] + object_voxel.shape[2]] = part_scene
@@ -248,6 +251,22 @@ def json_to_npy(json_file_input):
 # ----------------------------------------------------------------------------------
 
 def npy_to_ply(input_npy_file):
+    colors = []
+    colors.append(" 0 0 0 255  ")  # balck      for 0  'empty'
+    colors.append(" 139 0 0 255")  # dark red   for 1  'ceiling'
+    colors.append(" 0 128 0 255")  # green      for 2  'floor'
+    colors.append(" 173 216 230 255")  # light blue for 3  'wall'
+    colors.append(" 0 0 255 255")  # blue       for 4  'window'
+    colors.append(" 255 0 0 255")  # red        for 5  'door'
+    colors.append(" 218 165 32 255")  # goldenrod  for 6  'chair'
+    colors.append(" 210 180 140 255")  # tan        for 7  'bed'
+    colors.append(" 128 0   128 255")  # purple     for 8  'sofa'
+    colors.append(" 0  0 139 255")  # dark blue  for 9  'table'
+    colors.append(" 255 255 0 255")  # yellow     for 10 'coffe table'
+    colors.append(" 128 128 128 255")  # gray       for 11 'shelves'
+    colors.append(" 0 100 0 255")  # dark green for 12 ' '
+    colors.append(" 255 165 0 255")  # orange     for 13 'furniture'
+
     output_scene = np.load(input_npy_file)
     output = open(str(input_npy_file[:-4]) + ".ply", 'w')
     ply = ""
@@ -256,7 +275,8 @@ def npy_to_ply(input_npy_file):
         for idx2 in range(output_scene.shape[1]):
             for idx3 in range(output_scene.shape[2]):
                 if output_scene[idx1][idx2][idx3] >= 1:
-                    ply = ply + str(idx1) + " " + str(idx2) + " " + str(idx3) + " 0 128 0 255" + "\n"
+                    ply = ply + str(idx1) + " " + str(idx2) + " " + str(idx3) + str(
+                        colors[int(output_scene[idx1][idx2][idx3])]) + "\n"
                     ver_num += 1
     output.write("ply" + "\n")
     output.write("format ascii 1.0" + "\n")
@@ -281,9 +301,6 @@ def npy_to_ply(input_npy_file):
 
 def slice_non_zeroes(input_np):
     ones = np.argwhere(input_np)
-    # if ones.size == 0:
-    #     debugger = 1
-    #     return input_np
     (x_start, y_start, z_start), (x_stop, y_stop, z_stop) = ones.min(0), ones.max(0) + 1
     return input_np[x_start:x_stop, y_start:y_stop, z_start:z_stop]
 
@@ -293,17 +310,17 @@ def slice_non_zeroes(input_np):
 if __name__ == '__main__':
 
     # json to json s
-    # if build_json_to_jsons:
-    #     for json_file in glob.glob('*.json'):
-    #         json_reader(json_file)
-    #         os.remove(json_file)
+    if build_json_to_jsons:
+        for json_file in glob.glob('*.json'):
+            json_reader(json_file)
+            os.remove(json_file)
 
     # json to npy
     csv_loader()
     for json_file in glob.glob('*.json'):
         print (str(json_file))
         json_to_npy(json_file)
-        # os.remove(json_file)
+        os.remove(json_file)
 
     # TODO: give label to each voxel
 
