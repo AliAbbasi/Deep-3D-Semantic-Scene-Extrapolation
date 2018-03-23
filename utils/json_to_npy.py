@@ -78,7 +78,6 @@ def get_room(room, input_json_file):
 
 def trans_op(input_object_voxel, input_transformation):
     # TODO: there is a problem with trans, after trans some part of objects are missing, i.e., 238
-    # TODO: should we calculate the transformed coordinates, then find the distance between points, then fix that distance
     max_dim = np.max(input_object_voxel.shape)
     new_object_voxel = np.zeros((input_object_voxel.shape[0] + max_dim * 3,
                                  input_object_voxel.shape[1] + max_dim * 3,
@@ -158,6 +157,8 @@ def json_to_npy(json_file_input):
                 transformation = np.asarray(node["transform"]).reshape(4, 4)
 
                 # ----------------------------------------
+                # TODO: determine if the transformation is diagonal, then keep it, if it is axis align, then convert it to int
+                # but how ???
                 # TODO: I think we need float trans matrix for diagonal transformation
                 # TODO: So convert float to int means that there is no diagonal transformation
                 # TODO: Maybe filling the empty spaces between voxels after transformation is better solution
@@ -338,3 +339,5 @@ if __name__ == '__main__':
     if build_ply:
         for npy_file in glob.glob('*.npy'):
             npy_to_ply(npy_file)
+
+            
