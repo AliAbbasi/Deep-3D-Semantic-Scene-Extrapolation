@@ -118,10 +118,13 @@ def json_to_npy(json_file_input):
     data = json.load(open(json_file_input))
     glob_bbox_min = np.full(3, sys.maxint * 1.0)
     glob_bbox_max = np.full(3, -sys.maxint - 1 * 1.0)
+    room_model_id = ""
 
     # to find the bbox_min and bbox_max of all objects
     for level in data["levels"]:
         for node in level["nodes"]:
+            if node["type"] == "Room" and node["valid"] == 1:
+                room_model_id = node["modelId"]
             if node["type"] == "Object" and node["valid"] == 1:
                 bbox_min = np.asarray(node["bbox"]["min"])
                 bbox_max = np.asarray(node["bbox"]["max"])
@@ -233,6 +236,7 @@ def json_to_npy(json_file_input):
                       bbox_min[2]: bbox_min[2] + object_voxel.shape[2]] = part_scene
 
         # TODO; before save the scene, put the walls, floor and ceiling
+        # read the room w, f, c form rooms folder, by room_model_id
         np.save(str(json_file_input[:-5]) + ".npy", scene)
 
 
@@ -318,5 +322,3 @@ if __name__ == '__main__':
     if build_ply:
         for npy_file in glob.glob('*.npy'):
             npy_to_ply(npy_file)
-
-            
