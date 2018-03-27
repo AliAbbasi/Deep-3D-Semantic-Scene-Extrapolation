@@ -88,14 +88,9 @@ def trans_op(input_object_voxel, input_transformation):
             for z in range(int(-max_dim / 2), int(max_dim / 2)):
                 coordinate = np.array([[x], [y], [z], [1]])
                 new_coordinate = input_transformation.dot(coordinate)
-                tt = new_coordinate
                 new_coordinate += max_dim + int(max_dim / 2) + 1
                 new_coordinate = np.around(new_coordinate)
                 new_coordinate = np.asarray(map(int, new_coordinate))
-
-
-                # new_coordinate = map(int, new_coordinate)
-
 
                 # TODO: there is two problems, 1: the new_coors are negative, 2: new_coors are larger than expected
                 if any(i < 0 for i in new_coordinate[0:3]) or any(i > (input_object_voxel.shape[0] + max_dim * 3) for i in new_coordinate[0:3]):
@@ -103,12 +98,6 @@ def trans_op(input_object_voxel, input_transformation):
                 else:
                     new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = \
                         input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]
-
-                    # for debug
-                    # if input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]:
-                    #     print (x + int(max_dim/2), y, z + int(max_dim/2),
-                    #            " /// ", new_coordinate[0], new_coordinate[1], new_coordinate[2],
-                    #            " /// ", tt[0][0], tt[1][0], tt[2][0])
 
     # for x in range(input_object_voxel.shape[0]):
     #     for y in range(input_object_voxel.shape[1]):
@@ -170,16 +159,9 @@ def json_to_npy(json_file_input):
                 str_modelId = str(node["modelId"])
                 object_voxel = np.load("object/" + str(node["modelId"] + ".npy"))
 
-                # get default object aligned dims
-                for model in models:
-                    if str(model["id"]) == str(node["modelId"]):
-                        def_aligned_dims = np.around(np.asarray(map(float, model["aligned.dims"].split(","))))
-
                 bbox_min = np.asarray(node["bbox"]["min"])
                 bbox_max = np.asarray(node["bbox"]["max"])
 
-                # get current object aligned dims
-                cur_aligned_dims = np.around((bbox_max - bbox_min) * 100.0)
                 # TODO: cur_aligned_dims for what ???
 
                 bbox_min -= glob_bbox_min
@@ -187,10 +169,6 @@ def json_to_npy(json_file_input):
 
                 # TODO: care about the negative numbers in bbox
                 bbox_min = map(int, (bbox_min * 100.0) / 6.0)
-                bbox_max = map(int, (bbox_max * 100.0) / 6.0)
-
-                if str_modelId == '238':
-                    debugger = 23
 
                 # transformation
                 object_voxel = trans_op(object_voxel, transformation)
@@ -254,6 +232,7 @@ def json_to_npy(json_file_input):
                       bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
                       bbox_min[2]: bbox_min[2] + object_voxel.shape[2]] = part_scene
 
+        # TODO; before save the scene, put the walls, floor and ceiling
         np.save(str(json_file_input[:-5]) + ".npy", scene)
 
 
