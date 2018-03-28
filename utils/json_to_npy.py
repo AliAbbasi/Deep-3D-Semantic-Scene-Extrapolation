@@ -237,12 +237,42 @@ def json_to_npy(json_file_input):
 
         # TODO; before save the scene, put the walls, floor and ceiling
         # read the room w, f, c form rooms folder, by room_model_id
+
         for room in glob.glob('rooms/' + '*.obj'):
+            if str(room[:-5]) == room_model_id:
+                obj_reader(room)
+                pass
+                # read obj faces into somethings
             # TODO; read .obj file
             # TODO; we should read each triangle and fit it in 'scene' numpy, there is no other choice
             pass
         np.save(str(json_file_input[:-5]) + ".npy", scene)
 
+
+# ----------------------------------------------------------------------------------
+
+def obj_reader(input_obj):
+    vertices = []
+    faces = []
+    with open(input_obj, "r") as input_room:
+        for line in input_room:
+            if line[0:2] == "v ":
+                vertices.append(line[2:])
+            elif line[0:2] == "f ":
+                faces.append(line[2:])
+
+    for i in range(len(vertices)):
+        vertices[i] = map(float, vertices[i].split())
+
+    for i in range(len(faces)):
+        faces[i] = faces[i].split()
+        splitted = []
+        for item in faces[i]:
+            splitted.append(int(item.split("/")[0]))
+        faces[i] = splitted
+
+    vertices = np.asarray(vertices, dtype=float)
+    vertices = (vertices * 100 / 6.0)   # TODO: should be: - global_min
 
 # ----------------------------------------------------------------------------------
 
@@ -308,6 +338,8 @@ def slice_non_zeroes(input_np):
 # ----------------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    a = np.zeros((300, 300, 300))
+    np.greater_equal.outer()
 
     # json to json s
     if build_json_to_jsons:
