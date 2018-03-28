@@ -237,6 +237,10 @@ def json_to_npy(json_file_input):
 
         # TODO; before save the scene, put the walls, floor and ceiling
         # read the room w, f, c form rooms folder, by room_model_id
+        for room in glob.glob('rooms/' + '*.obj'):
+            # TODO; read .obj file
+            # TODO; we should read each triangle and fit it in 'scene' numpy, there is no other choice
+            pass
         np.save(str(json_file_input[:-5]) + ".npy", scene)
 
 
