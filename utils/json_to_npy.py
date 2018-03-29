@@ -124,7 +124,7 @@ def json_to_npy(json_file_input):
     for level in data["levels"]:
         for node in level["nodes"]:
             if node["type"] == "Room" and node["valid"] == 1:
-                room_model_id = node["modelId"]
+                room_model_id = str(node["modelId"])
             if node["type"] == "Object" and node["valid"] == 1:
                 bbox_min = np.asarray(node["bbox"]["min"])
                 bbox_max = np.asarray(node["bbox"]["max"])
@@ -240,12 +240,17 @@ def json_to_npy(json_file_input):
 
         for room in glob.glob('rooms/' + '*.obj'):
             if str(room[:-5]) == room_model_id:
-                obj_reader(room)
-                pass
-                # read obj faces into somethings
-            # TODO; read .obj file
-            # TODO; we should read each triangle and fit it in 'scene' numpy, there is no other choice
-            pass
+                vertices, faces = obj_reader(room)
+                vertices -= glob_bbox_min
+                # vertices = map(int, vertices)
+                for face in faces:
+                    x_ = [vertices[face[0]-1][0], vertices[face[1]-1][0], vertices[face[2]-1][0]]
+                    y_ = [vertices[face[0]-1][1], vertices[face[1]-1][1], vertices[face[2]-1][1]]
+                    z_ = [vertices[face[0]-1][2], vertices[face[1]-1][2], vertices[face[2]-1][2]]
+                    # TODO: we should take the triangle of the each face, not square
+                    min_coor = [min(x_), min(y_), min(z_)]
+                    max_coor = [max(x_), max(y_), max(z_)]
+                    scene[min_coor[0]:max_coor[0], min_coor[1]:max_coor[1], min_coor[2]:max_coor[2]] = 1
         np.save(str(json_file_input[:-5]) + ".npy", scene)
 
 
@@ -273,6 +278,8 @@ def obj_reader(input_obj):
 
     vertices = np.asarray(vertices, dtype=float)
     vertices = (vertices * 100 / 6.0)   # TODO: should be: - global_min
+
+    return vertices, faces
 
 # ----------------------------------------------------------------------------------
 
@@ -338,14 +345,12 @@ def slice_non_zeroes(input_np):
 # ----------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    a = np.zeros((300, 300, 300))
-    np.greater_equal.outer()
 
     # json to json s
     if build_json_to_jsons:
         for json_file in glob.glob('*.json'):
             json_reader(json_file)
-            os.remove(json_file)
+            # os.remove(json_file)
 
     # json to npy
     csv_loader()
