@@ -5,10 +5,10 @@
 import json
 import glob
 import sys
-import os
 import numpy as np
 import csv
 import random
+import math
 
 # ----------------------------------------------------------------------------------
 
@@ -17,6 +17,7 @@ models = []
 # scene = np.zeros((300, 300, 300))
 build_ply = True
 build_json_to_jsons = True
+
 
 # ----------------------------------------------------------------------------------
 
@@ -61,7 +62,7 @@ def get_room(room, input_json_file):
                     elif node["type"] == "Object":
                         if not int(node["id"].split("_")[1]) in node_indices:
                             # TODO: care about the object in the other levels
-                               # or int(node["id"].split("_")[0]) != room_id.split("_")[0]:
+                            # or int(node["id"].split("_")[0]) != room_id.split("_")[0]:
                             node["valid"] = 0
                     elif node["type"] == "Ground":
                         node["valid"] = 0
@@ -93,11 +94,12 @@ def trans_op(input_object_voxel, input_transformation):
                 new_coordinate = np.asarray(map(int, new_coordinate))
 
                 # TODO: there is two problems, 1: the new_coors are negative, 2: new_coors are larger than expected
-                if any(i < 0 for i in new_coordinate[0:3]) or any(i > (input_object_voxel.shape[0] + max_dim * 3) for i in new_coordinate[0:3]):
+                if any(i < 0 for i in new_coordinate[0:3]) or any(
+                        i > (input_object_voxel.shape[0] + max_dim * 3) for i in new_coordinate[0:3]):
                     pass
                 else:
                     new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = \
-                        input_object_voxel[x + int(max_dim/2), y, z + int(max_dim/2)]
+                        input_object_voxel[x + int(max_dim / 2), y, z + int(max_dim / 2)]
 
     # for x in range(input_object_voxel.shape[0]):
     #     for y in range(input_object_voxel.shape[1]):
@@ -217,41 +219,57 @@ def json_to_npy(json_file_input):
 
                 # put object_voxel into scene where object_voxel = True
                 part_scene = scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
-                                   bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
-                                   bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
+                             bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
+                             bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
                 # in some case the place of object is out of scene size, cut the object to fit
                 if part_scene.shape != object_voxel.shape:
                     object_voxel = object_voxel[:part_scene.shape[0], :part_scene.shape[1], :part_scene.shape[2]]
                     part_scene = scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
-                                       bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
-                                       bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
+                                 bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
+                                 bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
 
                 # TODO: give label to each voxel
                 # random color to each voxel, TODO: fix it later
+
                 random_color = random.randint(1, 13)
                 part_scene[np.where(object_voxel)] = object_voxel[np.where(object_voxel)]
                 part_scene[np.where(part_scene)] = random_color
                 scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
-                      bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
-                      bbox_min[2]: bbox_min[2] + object_voxel.shape[2]] = part_scene
+                bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
+                bbox_min[2]: bbox_min[2] + object_voxel.shape[2]] = part_scene
 
-        # TODO; before save the scene, put the walls, floor and ceiling
-        # read the room w, f, c form rooms folder, by room_model_id
+    # TODO; before save the scene, put the walls, floor and ceiling
+    # read the room w, f, c form rooms folder, by room_model_id
+    print np.count_nonzero(scene)
+    # scene[0:10, 0:10, 0:10] = 1
+    # print np.count_nonzero(scene)
 
-        for room in glob.glob('rooms/' + '*.obj'):
-            if str(room[:-5]) == room_model_id:
-                vertices, faces = obj_reader(room)
-                vertices -= glob_bbox_min
-                # vertices = map(int, vertices)
-                for face in faces:
-                    x_ = [vertices[face[0]-1][0], vertices[face[1]-1][0], vertices[face[2]-1][0]]
-                    y_ = [vertices[face[0]-1][1], vertices[face[1]-1][1], vertices[face[2]-1][1]]
-                    z_ = [vertices[face[0]-1][2], vertices[face[1]-1][2], vertices[face[2]-1][2]]
-                    # TODO: we should take the triangle of the each face, not square
-                    min_coor = [min(x_), min(y_), min(z_)]
-                    max_coor = [max(x_), max(y_), max(z_)]
-                    scene[min_coor[0]:max_coor[0], min_coor[1]:max_coor[1], min_coor[2]:max_coor[2]] = 1
-        np.save(str(json_file_input[:-5]) + ".npy", scene)
+    for room in glob.glob('rooms/' + '*.obj'):
+        if str(room[6:-5]) == room_model_id:
+            vertices, faces = obj_reader(room)
+            vertices -= glob_bbox_min
+            vertices = (vertices * 100 / 6.0)
+            # vertices = map(int, vertices)
+            for face in faces:
+                x_ = [vertices[face[0] - 1][0], vertices[face[1] - 1][0], vertices[face[2] - 1][0]]
+                y_ = [vertices[face[0] - 1][1], vertices[face[1] - 1][1], vertices[face[2] - 1][1]]
+                z_ = [vertices[face[0] - 1][2], vertices[face[1] - 1][2], vertices[face[2] - 1][2]]
+                # TODO: we should take the triangle of the each face, not square
+                if math.isnan(x_[0]) is False:
+                    min_coor = map(int, [min(x_), min(y_), min(z_)])
+                    max_coor = map(int, [max(x_), max(y_), max(z_)])
+                    min_coor = [0 if i < 0 else i for i in min_coor]
+                    max_coor = [0 if i < 0 else i for i in max_coor]
+                    dim1 = (max_coor[0] - min_coor[0]) if (max_coor[0] - min_coor[0]) < scene.shape[0] else scene.shape[0]
+                    dim2 = (max_coor[1] - min_coor[1]) if (max_coor[1] - min_coor[1]) < scene.shape[1] else scene.shape[1]
+                    dim3 = (max_coor[2] - min_coor[2]) if (max_coor[2] - min_coor[2]) < scene.shape[2] else scene.shape[2]
+                    parted_frames = np.ones((dim1, dim2, dim3))
+                    scene[min_coor[0]: max_coor[0],
+                          min_coor[1]: max_coor[1],
+                          min_coor[2]: max_coor[2]] = parted_frames
+            print np.count_nonzero(scene)
+
+    np.save(str(json_file_input[:-5]) + ".npy", scene)
 
 
 # ----------------------------------------------------------------------------------
@@ -268,18 +286,16 @@ def obj_reader(input_obj):
 
     for i in range(len(vertices)):
         vertices[i] = map(float, vertices[i].split())
-
     for i in range(len(faces)):
         faces[i] = faces[i].split()
         splitted = []
         for item in faces[i]:
             splitted.append(int(item.split("/")[0]))
         faces[i] = splitted
-
     vertices = np.asarray(vertices, dtype=float)
-    vertices = (vertices * 100 / 6.0)   # TODO: should be: - global_min
 
     return vertices, faces
+
 
 # ----------------------------------------------------------------------------------
 
