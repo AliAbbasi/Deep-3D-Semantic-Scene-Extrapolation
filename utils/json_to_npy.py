@@ -141,7 +141,8 @@ def json_to_npy(json_file_input):
 
     # determine scene size with respect to the glob_bbox_max - glob_bbox_min
     scene_size = map(int, ((glob_bbox_max - glob_bbox_min) * 100.0) / 6.0)
-    scene = np.zeros(scene_size)
+    # scene = np.zeros(scene_size)
+    scene = np.zeros((100,100,100))
 
     # put objects in their places
     for level in data["levels"]:
@@ -240,7 +241,7 @@ def json_to_npy(json_file_input):
 
     # TODO; before save the scene, put the walls, floor and ceiling
     # read the room w, f, c form rooms folder, by room_model_id
-    print np.count_nonzero(scene)
+    # print np.count_nonzero(scene)
     # scene[0:10, 0:10, 0:10] = 1
     # print np.count_nonzero(scene)
 
@@ -254,20 +255,18 @@ def json_to_npy(json_file_input):
                 x_ = [vertices[face[0] - 1][0], vertices[face[1] - 1][0], vertices[face[2] - 1][0]]
                 y_ = [vertices[face[0] - 1][1], vertices[face[1] - 1][1], vertices[face[2] - 1][1]]
                 z_ = [vertices[face[0] - 1][2], vertices[face[1] - 1][2], vertices[face[2] - 1][2]]
-                # TODO: we should take the triangle of the each face, not square
+                # TODO: we should take the triangle of the each face
                 if math.isnan(x_[0]) is False:
-                    min_coor = map(int, [min(x_), min(y_), min(z_)])
-                    max_coor = map(int, [max(x_), max(y_), max(z_)])
+                    min_coor = map(int, [min([x_[0], y_[0], z_[0]]), min([x_[1], y_[1], z_[1]]), min([x_[2], y_[2], z_[2]])])
+                    max_coor = map(int, [max([x_[0], y_[0], z_[0]]), max([x_[1], y_[1], z_[1]]), max([x_[2], y_[2], z_[2]])])
                     min_coor = [0 if i < 0 else i for i in min_coor]
                     max_coor = [0 if i < 0 else i for i in max_coor]
-                    dim1 = (max_coor[0] - min_coor[0]) if (max_coor[0] - min_coor[0]) < scene.shape[0] else scene.shape[0]
-                    dim2 = (max_coor[1] - min_coor[1]) if (max_coor[1] - min_coor[1]) < scene.shape[1] else scene.shape[1]
-                    dim3 = (max_coor[2] - min_coor[2]) if (max_coor[2] - min_coor[2]) < scene.shape[2] else scene.shape[2]
-                    parted_frames = np.ones((dim1, dim2, dim3))
-                    scene[min_coor[0]: max_coor[0],
-                          min_coor[1]: max_coor[1],
-                          min_coor[2]: max_coor[2]] = parted_frames
-            print np.count_nonzero(scene)
+
+                    # scene[min_coor[0]: max_coor[0],
+                    #       min_coor[1]: max_coor[1],
+                    #       min_coor[2]: max_coor[2]] = 1
+
+            # print np.count_nonzero(scene)
 
     np.save(str(json_file_input[:-5]) + ".npy", scene)
 
