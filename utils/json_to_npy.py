@@ -62,6 +62,7 @@ def get_room(room, input_json_file):
                     elif node["type"] == "Object":
                         if not int(node["id"].split("_")[1]) in node_indices:
                             # TODO: care about the object in the other levels
+                            # TODO: should be test in multi floor house
                             # or int(node["id"].split("_")[0]) != room_id.split("_")[0]:
                             node["valid"] = 0
                     elif node["type"] == "Ground":
@@ -100,16 +101,6 @@ def trans_op(input_object_voxel, input_transformation):
                 else:
                     new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = \
                         input_object_voxel[x + int(max_dim / 2), y, z + int(max_dim / 2)]
-
-    # for x in range(input_object_voxel.shape[0]):
-    #     for y in range(input_object_voxel.shape[1]):
-    #         for z in range(input_object_voxel.shape[2]):
-    #             coordinate = np.array([[x], [y], [z], [1]])
-    #             new_coordinate = input_transformation.dot(coordinate)
-    #             new_coordinate = np.asarray(map(int, np.around(new_coordinate)))
-    #             int_max_dim = int(max_dim / 2.0)
-    #             new_coordinate += int_max_dim
-    #             new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = input_object_voxel[x, y, z]
 
     return new_object_voxel
 
@@ -252,8 +243,6 @@ def json_to_npy(json_file_input):
                     ver2 = map(int, vertices[face[1]-1])
                     ver3 = map(int, vertices[face[2]-1])
 
-                    # TODO: we should take the triangle of the each face
-
                     min_coor = map(int, [min(ver1[0], ver2[0], ver3[0]), min(ver1[1], ver2[1], ver3[1]), min(ver1[2], ver2[2], ver3[2])])
                     max_coor = map(int, [max(ver1[0], ver2[0], ver3[0]), max(ver1[1], ver2[1], ver3[1]), max(ver1[2], ver2[2], ver3[2])])
                     min_coor = [0 if i < 0 else i for i in min_coor]
@@ -356,7 +345,6 @@ def npy_to_ply(input_npy_file):
 # ----------------------------------------------------------------------------------
 
 def slice_non_zeroes(input_np):
-    # TODO: is this if in right way ???
     ones = np.argwhere(input_np)
     if ones.size > 0:
         (x_start, y_start, z_start), (x_stop, y_stop, z_stop) = ones.min(0), ones.max(0) + 1
