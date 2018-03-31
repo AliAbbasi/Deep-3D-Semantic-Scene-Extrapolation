@@ -246,25 +246,31 @@ def json_to_npy(json_file_input):
     # print np.count_nonzero(scene)
 
     for room in glob.glob('rooms/' + '*.obj'):
-        if str(room[6:-5]) == room_model_id:
+        if str(room[6:-4]) == (room_model_id + 'f'):
             vertices, faces = obj_reader(room)
             vertices -= glob_bbox_min
             vertices = (vertices * 100 / 6.0)
             # vertices = map(int, vertices)
             for face in faces:
-                x_ = [vertices[face[0] - 1][0], vertices[face[1] - 1][0], vertices[face[2] - 1][0]]
-                y_ = [vertices[face[0] - 1][1], vertices[face[1] - 1][1], vertices[face[2] - 1][1]]
-                z_ = [vertices[face[0] - 1][2], vertices[face[1] - 1][2], vertices[face[2] - 1][2]]
+                ver1 = map(int, vertices[face[0]-1])
+                ver2 = map(int, vertices[face[1]-1])
+                ver3 = map(int, vertices[face[2]-1])
+
+                # x_ = [vertices[face[0] - 1][0], vertices[face[1] - 1][0], vertices[face[2] - 1][0]]
+                # y_ = [vertices[face[0] - 1][1], vertices[face[1] - 1][1], vertices[face[2] - 1][1]]
+                # z_ = [vertices[face[0] - 1][2], vertices[face[1] - 1][2], vertices[face[2] - 1][2]]
                 # TODO: we should take the triangle of the each face
-                if math.isnan(x_[0]) is False:
-                    min_coor = map(int, [min([x_[0], y_[0], z_[0]]), min([x_[1], y_[1], z_[1]]), min([x_[2], y_[2], z_[2]])])
-                    max_coor = map(int, [max([x_[0], y_[0], z_[0]]), max([x_[1], y_[1], z_[1]]), max([x_[2], y_[2], z_[2]])])
+                if math.isnan(ver1[0]) is False:
+                    # min_coor = map(int, [min([x_[0], y_[0], z_[0]]), min([x_[1], y_[1], z_[1]]), min([x_[2], y_[2], z_[2]])])
+                    # max_coor = map(int, [max([x_[0], y_[0], z_[0]]), max([x_[1], y_[1], z_[1]]), max([x_[2], y_[2], z_[2]])])
+                    min_coor = map(int, [min(ver1[0], ver2[0], ver3[0]), min(ver1[1], ver2[1], ver3[1]), min(ver1[2], ver2[2], ver3[2])])
+                    max_coor = map(int, [max(ver1[0], ver2[0], ver3[0]), max(ver1[1], ver2[1], ver3[1]), max(ver1[2], ver2[2], ver3[2])])
                     min_coor = [0 if i < 0 else i for i in min_coor]
                     max_coor = [0 if i < 0 else i for i in max_coor]
 
-                    # scene[min_coor[0]: max_coor[0],
-                    #       min_coor[1]: max_coor[1],
-                    #       min_coor[2]: max_coor[2]] = 1
+                    scene[min_coor[0]: max_coor[0],
+                          min_coor[1]: max_coor[1],
+                          min_coor[2]: max_coor[2]] = 1
 
             # print np.count_nonzero(scene)
 
