@@ -109,4 +109,5 @@ utils/*.binvox
 utils/*.npy
 utils/*.ply
 utils/object
-utils/rooms
+utils/room
+utils/house
