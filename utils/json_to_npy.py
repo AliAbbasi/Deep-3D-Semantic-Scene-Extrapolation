@@ -13,7 +13,6 @@ import os
 # ----------------------------------------------------------------------------------
 
 model_category_mapping = []
-models = []
 build_json_to_jsons = True
 build_json_to_npy = True
 build_ply = True
@@ -34,11 +33,6 @@ def csv_loader():
                 coarse_grained_class[key] = class_value
                 class_value += 1
 
-    with open('meta_data/models.csv') as csv_file:
-        dict_reader = csv.DictReader(csv_file)
-        for row in dict_reader:
-            models.append(row)
-
 
 # ----------------------------------------------------------------------------------
 
@@ -55,7 +49,7 @@ def json_reader(input_json_file):
 def get_room(room, input_json_file):
     room_id = room["id"]
     data = json.load(open(input_json_file))
-    output_json = open(str(data["id"]) + "_" + str(room_id) + ".json", 'w')
+    output_json = open('house/' + str(data["id"]) + "_" + str(room_id) + ".json", 'w')
 
     if "nodeIndices" in room:
         node_indices = room["nodeIndices"]
@@ -115,6 +109,7 @@ def trans_op(input_object_voxel, input_transformation):
 
 def json_to_npy(json_file_input):
     data = json.load(open(json_file_input))
+    json_id = data["id"]
     glob_bbox_min = np.full(3, sys.maxint * 1.0)
     glob_bbox_max = np.full(3, -sys.maxint - 1 * 1.0)
     room_model_id = ""
@@ -184,7 +179,7 @@ def json_to_npy(json_file_input):
                       bbox_min[2]: bbox_min[2] + object_voxel.shape[2]] = part_scene
 
     # Add the walls, floor, ceiling to the scene
-    for room in glob.glob('rooms/' + '*.obj'):
+    for room in glob.glob('room/' + str(json_id) + '/' + '*.obj'):
         if str(room[6:-4]) == (room_model_id + 'w') or str(room[6:-4]) == (room_model_id + 'f'):
             desired_label_value = 1 if room[-5] == 'w' else 3
             vertices, faces = obj_reader(room)
@@ -322,7 +317,7 @@ if __name__ == '__main__':
 
     # json to json s
     if build_json_to_jsons:
-        for json_file in glob.glob('*.json'):
+        for json_file in glob.glob('house/*.json'):
             json_reader(json_file)
             os.remove(json_file)
 
@@ -331,12 +326,12 @@ if __name__ == '__main__':
 
     # json to npy
     if build_json_to_npy:
-        for json_file in glob.glob('*.json'):
+        for json_file in glob.glob('house/*.json'):
             json_to_npy(json_file)
             print (str(json_file) + " npy file is done.")
-            # os.remove(json_file)
+            os.remove(json_file)
 
     # npy to ply
     if build_ply:
-        for npy_file in glob.glob('*.npy'):
+        for npy_file in glob.glob('house/*.npy'):
             npy_to_ply(npy_file)
