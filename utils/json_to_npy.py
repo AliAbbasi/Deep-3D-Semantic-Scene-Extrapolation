@@ -180,7 +180,7 @@ def json_to_npy(json_file_input):
 
     # Add the walls, floor, ceiling to the scene
     for room in glob.glob('room/' + str(json_id) + '/' + '*.obj'):
-        if str(room[6:-4]) == (room_model_id + 'w') or str(room[6:-4]) == (room_model_id + 'f'):
+        if str(room[38:-4]) == (room_model_id + 'w') or str(room[38:-4]) == (room_model_id + 'f'):
             desired_label_value = 1 if room[-5] == 'w' else 3
             vertices, faces = obj_reader(room)
             vertices -= glob_bbox_min
