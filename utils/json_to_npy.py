@@ -14,8 +14,8 @@ import os
 
 model_category_mapping = []
 build_json_to_jsons = True
-build_json_to_npy = True
-build_ply = True
+build_json_to_npy = False
+build_ply = False
 coarse_grained_class = dict()
 
 # ----------------------------------------------------------------------------------
@@ -316,20 +316,26 @@ def slice_non_zeroes(input_np):
 if __name__ == '__main__':
 
     # json to json s
+    counter = 1
     if build_json_to_jsons:
         for json_file in glob.glob('house/*.json'):
             json_reader(json_file)
             os.remove(json_file)
+            print counter
+            counter += 1
 
     # load scenes information from meta files
     csv_loader()
 
     # json to npy
+    counter = 1
     if build_json_to_npy:
         for json_file in glob.glob('house/*.json'):
             json_to_npy(json_file)
             print (str(json_file) + " npy file is done.")
             os.remove(json_file)
+            print counter
+            counter += 1
 
     # npy to ply
     if build_ply:
