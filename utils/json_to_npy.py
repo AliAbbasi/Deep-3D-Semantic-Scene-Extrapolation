@@ -7,7 +7,6 @@ import glob
 import sys
 import numpy as np
 import csv
-import random
 import math
 import os
 
@@ -15,17 +14,25 @@ import os
 
 model_category_mapping = []
 models = []
-build_ply = True
 build_json_to_jsons = True
-
+build_json_to_npy = True
+build_ply = True
+coarse_grained_class = dict()
 
 # ----------------------------------------------------------------------------------
 
 def csv_loader():
     with open('meta_data/ModelCategoryMapping.csv') as csv_file:
         dict_reader = csv.DictReader(csv_file)
+        class_value = 0
         for row in dict_reader:
             model_category_mapping.append(row)
+            key = row['coarse_grained_class']
+            if key in coarse_grained_class:
+                pass
+            else:
+                coarse_grained_class[key] = class_value
+                class_value += 1
 
     with open('meta_data/models.csv') as csv_file:
         dict_reader = csv.DictReader(csv_file)
@@ -94,7 +101,6 @@ def trans_op(input_object_voxel, input_transformation):
                 new_coordinate = np.around(new_coordinate)
                 new_coordinate = np.asarray(map(int, new_coordinate))
 
-                # TODO: there is two problems, 1: the new_coors are negative, 2: new_coors are larger than expected
                 if any(i < 0 for i in new_coordinate[0:3]) or any(
                         i > (input_object_voxel.shape[0] + max_dim * 3) for i in new_coordinate[0:3]):
                     pass
@@ -134,7 +140,6 @@ def json_to_npy(json_file_input):
     scene_size = map(int, ((glob_bbox_max - glob_bbox_min) * 100.0) / 6.0)
     scene_size = [i+5 for i in scene_size]
     scene = np.zeros(scene_size)
-    # scene = np.zeros((100, 100, 100))
 
     # put objects in their places
     for level in data["levels"]:
@@ -143,29 +148,11 @@ def json_to_npy(json_file_input):
                 # fetch the transformation matrix from node["transform"]
                 transformation = np.asarray(node["transform"]).reshape(4, 4)
 
-                # ----------------------------------------
-                # TODO: determine if the transformation is diagonal, then keep it, if it is axis align, then convert it to int
-                # but how ???
-                # TODO: I think we need float trans matrix for diagonal transformation
-                # TODO: So convert float to int means that there is no diagonal transformation
-                # TODO: Maybe filling the empty spaces between voxels after transformation is better solution
-                # transformation = np.around(transformation)
-                # transformation = transformation.astype(np.int64)
-                # ----------------------------------------
-
-                # find the node["modelId"] (is a string) from current directory
-                str_modelId = str(node["modelId"])
+                # find the node["modelId"] (is a string) from object directory
                 object_voxel = np.load("object/" + str(node["modelId"] + ".npy"))
 
                 bbox_min = np.asarray(node["bbox"]["min"])
-                bbox_max = np.asarray(node["bbox"]["max"])
-
-                # TODO: cur_aligned_dims for what ???
-
                 bbox_min -= glob_bbox_min
-                bbox_max -= glob_bbox_min
-
-                # TODO: care about the negative numbers in bbox
                 bbox_min = map(int, (bbox_min * 100.0) / 6.0)
 
                 # transformation
@@ -173,70 +160,36 @@ def json_to_npy(json_file_input):
                 object_voxel = slice_non_zeroes(object_voxel)
                 object_voxel = np.flip(object_voxel, 0)
 
-                # ==================================================
-                # output = open(str(str_modelId) + ".ply", 'w')
-                # ply = ""
-                # ver_num = 0
-                # for idx1 in range(object_voxel.shape[0]):
-                #     for idx2 in range(object_voxel.shape[1]):
-                #         for idx3 in range(object_voxel.shape[2]):
-                #             if object_voxel[idx1][idx2][idx3] >= 1:
-                #                 ply = ply + str(idx1) + " " + str(idx2) + " " + str(idx3) + " 0 128 0 255" + "\n"
-                #                 ver_num += 1
-                # output.write("ply" + "\n")
-                # output.write("format ascii 1.0" + "\n")
-                # output.write("comment VCGLIB generated" + "\n")
-                # output.write("element vertex " + str(ver_num+8) + "\n")
-                # output.write("property float x" + "\n")
-                # output.write("property float y" + "\n")
-                # output.write("property float z" + "\n")
-                # output.write("property uchar red" + "\n")
-                # output.write("property uchar green" + "\n")
-                # output.write("property uchar blue" + "\n")
-                # output.write("property uchar alpha" + "\n")
-                # output.write("element face 0" + "\n")
-                # output.write("property list uchar int vertex_indices" + "\n")
-                # output.write("end_header" + "\n")
-                # output.write(ply)
-                # output.write("0 0 0 0 128 0 255 \n")
-                # output.write("0 0 "+str(object_voxel.shape[2])+" 0 128 0 255 \n")
-                # output.write("0 "+str(object_voxel.shape[1])+" 0 0 128 0 255 \n")
-                # output.write(str(object_voxel.shape[0])+" 0 0 0 128 0 255 \n")
-                # output.write(str(object_voxel.shape[0])+" " +str(object_voxel.shape[1])+" "+str(object_voxel.shape[2])+" 0 128 0 255 \n")
-                # output.write("0 " +str(object_voxel.shape[1])+" "+str(object_voxel.shape[2])+" 0 128 0 255 \n")
-                # output.write(str(object_voxel.shape[0])+" 0 "+ str(object_voxel.shape[2])+" 0 128 0 255 \n")
-                # output.write(str(object_voxel.shape[0])+" " +str(object_voxel.shape[1])+" 0 0 128 0 255 \n")
-                # output.close()
-                # print (str(str_modelId) + ".ply is Done.!")
-                # ==================================================
-
                 # put object_voxel into scene where object_voxel = True
                 part_scene = scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
-                             bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
-                             bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
+                                   bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
+                                   bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
                 # in some case the place of object is out of scene size, cut the object to fit
                 if part_scene.shape != object_voxel.shape:
                     object_voxel = object_voxel[:part_scene.shape[0], :part_scene.shape[1], :part_scene.shape[2]]
                     part_scene = scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
-                                 bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
-                                 bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
+                                       bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
+                                       bbox_min[2]: bbox_min[2] + object_voxel.shape[2]]
 
-                # TODO: give label to each voxel
-                # random color to each voxel, TODO: fix it later
-                random_color = random.randint(1, 13)
+                # give label to each voxel
                 part_scene[np.where(object_voxel)] = object_voxel[np.where(object_voxel)]
-                part_scene[np.where(part_scene)] = random_color
+                desired_label_value = 0
+                for item in model_category_mapping:
+                    if item['model_id'] == str(node["modelId"]):
+                        desired_label_value = coarse_grained_class[item['coarse_grained_class']]
+                        break
+                part_scene[np.where(part_scene)] = desired_label_value
                 scene[bbox_min[0]: bbox_min[0] + object_voxel.shape[0],
-                bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
-                bbox_min[2]: bbox_min[2] + object_voxel.shape[2]] = part_scene
+                      bbox_min[1]: bbox_min[1] + object_voxel.shape[1],
+                      bbox_min[2]: bbox_min[2] + object_voxel.shape[2]] = part_scene
 
-    # add the walls, floor, ceiling
+    # Add the walls, floor, ceiling to the scene
     for room in glob.glob('rooms/' + '*.obj'):
         if str(room[6:-4]) == (room_model_id + 'w') or str(room[6:-4]) == (room_model_id + 'f'):
+            desired_label_value = 1 if room[-5] == 'w' else 3
             vertices, faces = obj_reader(room)
             vertices -= glob_bbox_min
             vertices = (vertices * 100 / 6.0)
-            # vertices = map(int, vertices)
             for face in faces:
                 if math.isnan(vertices[face[0]-1][0]) is False:
                     ver1 = map(int, vertices[face[0]-1])
@@ -251,19 +204,19 @@ def json_to_npy(json_file_input):
                     if min_coor[0] == max_coor[0]:
                         scene[min_coor[0],
                               min_coor[1]: max_coor[1],
-                              min_coor[2]: max_coor[2]] = 1
+                              min_coor[2]: max_coor[2]] = desired_label_value
                     elif min_coor[1] == max_coor[1]:
                         scene[min_coor[0]: max_coor[0],
                               min_coor[1],
-                              min_coor[2]: max_coor[2]] = 1
+                              min_coor[2]: max_coor[2]] = desired_label_value
                     elif min_coor[2] == max_coor[2]:
                         scene[min_coor[0]: max_coor[0],
                               min_coor[1]: max_coor[1],
-                              min_coor[2]] = 1
+                              min_coor[2]] = desired_label_value
                     else:
                         scene[min_coor[0]: max_coor[0],
                               min_coor[1]: max_coor[1],
-                              min_coor[2]: max_coor[2]] = 1
+                              min_coor[2]: max_coor[2]] = desired_label_value
 
     np.save(str(json_file_input[:-5]) + ".npy", scene)
 
@@ -296,21 +249,31 @@ def obj_reader(input_obj):
 # ----------------------------------------------------------------------------------
 
 def npy_to_ply(input_npy_file):
-    colors = []
-    colors.append(" 0 0 0 255  ")  # balck      for 0  'empty'
-    colors.append(" 139 0 0 255")  # dark red   for 1  'ceiling'
-    colors.append(" 0 128 0 255")  # green      for 2  'floor'
-    colors.append(" 173 216 230 255")  # light blue for 3  'wall'
-    colors.append(" 0 0 255 255")  # blue       for 4  'window'
-    colors.append(" 255 0 0 255")  # red        for 5  'door'
-    colors.append(" 218 165 32 255")  # goldenrod  for 6  'chair'
-    colors.append(" 210 180 140 255")  # tan        for 7  'bed'
-    colors.append(" 128 0   128 255")  # purple     for 8  'sofa'
-    colors.append(" 0  0 139 255")  # dark blue  for 9  'table'
-    colors.append(" 255 255 0 255")  # yellow     for 10 'coffe table'
-    colors.append(" 128 128 128 255")  # gray       for 11 'shelves'
-    colors.append(" 0 100 0 255")  # dark green for 12 ' '
-    colors.append(" 255 165 0 255")  # orange     for 13 'furniture'
+    colors = [" 0 0 0 255  ", " 173 216 230 255", " 0 128 0 255", " 0 128 0 255", " 0 0 255 255", " 255 0 0 255",
+              " 218 165 32 255", " 210 180 140 255", " 128 0   128 255", " 0  0 139 255", " 255 255 0 255",
+              " 128 128 128 255", " 0 100 0 255", " 255 165 0 255", " 138 118 200 255 ",  " 236 206 244 255 ",
+              " 126 172 209 255 ",  " 237 112 24 255  ",  " 158 197 220 255 ",  " 21 240 24 255   ",
+              " 90 29 205 255  ",  " 183 246 66 255  ",  " 224 54 238 255  ",  " 39 129 50 255   ",
+              " 252 204 171 255 ",  " 255 18 39 255   ",  " 118 76 69 255   ",  " 139 212 79 255  ",
+              " 46 14 67 255    ",  " 142 113 129 255 ",  " 30 14 35 255    ",  " 17 90 54 255    ",
+              " 125 89 247 255  ",  " 166 18 75 255   ",  " 129 142 18 255  ",  " 147 10 255 255  ",
+              " 32 168 135 255  ",  " 245 199 6 255   ",  " 231 118 238 255 ",  " 84 35 213 255   ",
+              " 214 230 80 255  ",  " 236 23 17 255   ",  " 92 207 229 255  ",  " 49 243 237 255  ",
+              " 252 23 25 255   ",  " 209 224 126 255 ",  " 111 54 3 255    ",  " 96 11 79 255    ",
+              " 169 56 226 255  ",  " 169 68 202 255  ",  " 107 32 121 255  ",  " 158 3 146 255   ",
+              " 68 57 54 255    ",  " 212 200 217 255 ",  " 17 30 170 255   ",  " 254 162 238 255 ",
+              " 16 120 52 255   ",  " 104 48 251 255  ",  " 176 49 253 255  ",  " 67 84 223 255   ",
+              " 101 88 52 255   ",  " 204 50 193 255  ",  " 56 209 118 255  ",  " 79 74 216 255   ",
+              " 104 142 255 255 ",  " 15 228 195 255  ",  " 185 168 157 255 ",  " 227 7 222 255   ",
+              " 243 188 17 255  ",  " 20 85 135 255   ",  " 95 27 18 255    ",  " 189 126 21 255  ",
+              " 69 254 247 255  ",  " 84 91 111 255   ",  " 8 153 222 255   ",  " 188 72 148 255  ",
+              " 218 50 8 255    ",  " 183 217 27 255  ",  " 61 4 234 255    ",  " 31 113 81 255   ",
+              " 75 130 78 255   ",  " 128 232 57 255  ",  " 16 183 77 255   ",  " 91 43 145 255   ",
+              " 38 19 130 255   ",  " 64 236 113 255  ",  " 248 3 144 255   ",  " 194 157 62 255  ",
+              " 143 219 101 255 ",  " 136 37 208 255  ",  " 102 144 241 255 ",  " 158 126 247 255 ",
+              " 40 207 130 255  ",  " 88 131 224 255  ",  " 175 30 23 255   ",  " 42 224 197 255  ",
+              " 23 175 34 255   ",  " 118 144 216 255 ",  " 32 128 149 255  ",  " 200 185 126 255 ",
+              " 114 11 76 255   ",  " 28 60 36 255    ",  " 168 148 36 255  ",  " 57 246 83 255   "]
 
     output_scene = np.load(input_npy_file)
     output = open(str(input_npy_file[:-4]) + ".ply", 'w')
@@ -363,12 +326,15 @@ if __name__ == '__main__':
             json_reader(json_file)
             os.remove(json_file)
 
-    # json to npy
+    # load scenes information from meta files
     csv_loader()
-    for json_file in glob.glob('*.json'):
-        json_to_npy(json_file)
-        print (str(json_file) + " npy file is done.")
-        os.remove(json_file)
+
+    # json to npy
+    if build_json_to_npy:
+        for json_file in glob.glob('*.json'):
+            json_to_npy(json_file)
+            print (str(json_file) + " npy file is done.")
+            # os.remove(json_file)
 
     # npy to ply
     if build_ply:
