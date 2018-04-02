@@ -19,10 +19,16 @@ from   multiprocessing  import Pool
 # ----------------------------------------------------------------------------------
 
 model_category_mapping = []
-build_json_to_jsons = True
-build_json_to_npy = False
-build_ply = False
 coarse_grained_class = dict()
+
+build_json_to_jsons = False
+json_to_jsons_remove = False
+build_json_to_npy = True
+json_to_npy_remove = True
+build_ply = False
+
+batch_size_json_to_jsons = 50
+batch_size_json_to_npy = 50
 
 # ----------------------------------------------------------------------------------
 
@@ -42,20 +48,22 @@ def csv_loader():
 
 # ----------------------------------------------------------------------------------
 
-def json_reader(input_json_file):
-    data = json.load(open(input_json_file))
+def json_reader(json_file_input):
+    data = json.load(open(json_file_input))
     for level in data["levels"]:
         for node in level["nodes"]:
             if node["type"] == "Room":
-                get_room(node, input_json_file)
-    os.remove(input_json_file)
+                get_room(node, json_file_input)
+
+    if json_to_jsons_remove:
+        os.remove(json_file_input)
 
 
 # ----------------------------------------------------------------------------------
 
-def get_room(room, input_json_file):
+def get_room(room, json_file_input):
     room_id = room["id"]
-    data = json.load(open(input_json_file))
+    data = json.load(open(json_file_input))
     output_json = open('house/' + str(data["id"]) + "_" + str(room_id) + ".json", 'w')
 
     if "nodeIndices" in room:
@@ -226,6 +234,8 @@ def json_to_npy(json_file_input):
 
     np.save(str(json_file_input[:-5]) + ".npy", scene)
 
+    if json_to_npy_remove:
+        os.remove(json_file_input)
 
 # ----------------------------------------------------------------------------------
 
@@ -333,46 +343,69 @@ if __name__ == '__main__':
     #         if len(str(json_file)) == 43:
     #             print "Counter: ", counter, str(json_file)
     #             json_reader(json_file)
-    #             os.remove(json_file)
     #             counter += 1
+
     index = 0
-    batch_size = 50
-    p = Pool(batch_size)
-    batchArr = []
+    p = Pool(batch_size_json_to_jsons)
+    batch_arr = []
     counter = 0
 
+    # json to json s
     if build_json_to_jsons:
         for json_file in glob.glob('house/*.json'):
             if len(str(json_file)) == 43:
                 index += 1
                 batch = []
 
-                if counter < batch_size:
-                    batchArr.append(json_file)
+                if counter < batch_size_json_to_jsons:
+                    batch_arr.append(json_file)
                     counter += 1
                 else:
                     counter = 0
-                    batch.append(p.map(json_reader, batchArr))
-                    batchArr = []
-                    batchArr.append(json_file)
+                    batch.append(p.map(json_reader, batch_arr))
+                    batch_arr = [json_file]
                     counter += 1
                     print index
 
         # one by one
-        for json_file in batchArr:
+        for json_file in batch_arr:
             json_reader(json_file)
 
     # load scenes information from meta files
     csv_loader()
 
     # json to npy
-    counter = 1
+    # counter = 1
+    # if build_json_to_npy:
+    #     for json_file in glob.glob('house/*.json'):
+    #         print "Counter: ", counter, str(json_file)
+    #         json_to_npy(json_file)
+    #         counter += 1
+
+    index = 0
+    p = Pool(batch_size_json_to_npy)
+    batch_arr = []
+    counter = 0
+
+    # json to npy
     if build_json_to_npy:
         for json_file in glob.glob('house/*.json'):
-            print "Counter: ", counter, str(json_file)
+            index += 1
+            batch = []
+
+            if counter < batch_size_json_to_npy:
+                batch_arr.append(json_file)
+                counter += 1
+            else:
+                counter = 0
+                batch.append(p.map(json_to_npy, batch_arr))
+                batch_arr = [json_file]
+                counter += 1
+                print index
+
+        # one by one
+        for json_file in batch_arr:
             json_to_npy(json_file)
-            counter += 1
-            #os.remove(json_file)
 
     # npy to ply
     if build_ply:
