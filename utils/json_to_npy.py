@@ -1,5 +1,10 @@
 # create .npy file for each room of input json file
 
+# for subdir in *; do mv $subdir/house.json $subdir.json; done;
+# find . -type d -name -delete
+
+# find . -type f -size 0c -delete
+
 # ----------------------------------------------------------------------------------
 
 import json
@@ -196,6 +201,10 @@ def json_to_npy(json_file_input):
                     min_coor = [0 if i < 0 else i for i in min_coor]
                     max_coor = [0 if i < 0 else i for i in max_coor]
 
+                    max_coor[0] = max_coor[0] if max_coor[0] < scene.shape[0] else scene.shape[0]
+                    max_coor[1] = max_coor[1] if max_coor[1] < scene.shape[1] else scene.shape[1]
+                    max_coor[2] = max_coor[2] if max_coor[2] < scene.shape[2] else scene.shape[2]
+
                     if min_coor[0] == max_coor[0]:
                         scene[min_coor[0],
                               min_coor[1]: max_coor[1],
@@ -319,9 +328,9 @@ if __name__ == '__main__':
     counter = 1
     if build_json_to_jsons:
         for json_file in glob.glob('house/*.json'):
+            print "Counter: ", counter, str(json_file)
             json_reader(json_file)
             os.remove(json_file)
-            print counter
             counter += 1
 
     # load scenes information from meta files
@@ -331,11 +340,10 @@ if __name__ == '__main__':
     counter = 1
     if build_json_to_npy:
         for json_file in glob.glob('house/*.json'):
+            print "Counter: ", counter, str(json_file)
             json_to_npy(json_file)
-            print (str(json_file) + " npy file is done.")
-            os.remove(json_file)
-            print counter
             counter += 1
+            #os.remove(json_file)
 
     # npy to ply
     if build_ply:
