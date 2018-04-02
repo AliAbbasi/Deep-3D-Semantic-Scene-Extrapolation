@@ -14,6 +14,7 @@ import numpy as np
 import csv
 import math
 import os
+from   multiprocessing  import Pool
 
 # ----------------------------------------------------------------------------------
 
@@ -47,6 +48,7 @@ def json_reader(input_json_file):
         for node in level["nodes"]:
             if node["type"] == "Room":
                 get_room(node, input_json_file)
+    os.remove(input_json_file)
 
 
 # ----------------------------------------------------------------------------------
@@ -325,13 +327,40 @@ def slice_non_zeroes(input_np):
 if __name__ == '__main__':
 
     # json to json s
-    counter = 1
+    # counter = 1
+    # if build_json_to_jsons:
+    #     for json_file in glob.glob('house/*.json'):
+    #         if len(str(json_file)) == 43:
+    #             print "Counter: ", counter, str(json_file)
+    #             json_reader(json_file)
+    #             os.remove(json_file)
+    #             counter += 1
+    index = 0
+    batch_size = 50
+    p = Pool(batch_size)
+    batchArr = []
+    counter = 0
+
     if build_json_to_jsons:
         for json_file in glob.glob('house/*.json'):
-            print "Counter: ", counter, str(json_file)
+            if len(str(json_file)) == 43:
+                index += 1
+                batch = []
+
+                if counter < batch_size:
+                    batchArr.append(json_file)
+                    counter += 1
+                else:
+                    counter = 0
+                    batch.append(p.map(json_reader, batchArr))
+                    batchArr = []
+                    batchArr.append(json_file)
+                    counter += 1
+                    print index
+
+        # one by one
+        for json_file in batchArr:
             json_reader(json_file)
-            os.remove(json_file)
-            counter += 1
 
     # load scenes information from meta files
     csv_loader()
