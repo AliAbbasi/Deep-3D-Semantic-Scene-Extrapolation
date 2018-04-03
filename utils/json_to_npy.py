@@ -2,7 +2,6 @@
 
 # for subdir in *; do mv $subdir/house.json $subdir.json; done;
 # find . -type d -name -delete
-
 # find . -type f -size 0c -delete
 
 # ----------------------------------------------------------------------------------
@@ -25,9 +24,9 @@ build_json_to_jsons = False
 json_to_jsons_remove = False
 
 build_json_to_npy = True
-json_to_npy_remove = True
+json_to_npy_remove = False
 
-build_ply = False
+build_ply = True
 
 batch_size_json_to_jsons = 50
 batch_size_json_to_npy = 50
@@ -112,8 +111,8 @@ def trans_op(input_object_voxel, input_transformation):
                 new_coordinate = np.around(new_coordinate)
                 new_coordinate = np.asarray(map(int, new_coordinate))
 
-                if any(i < 0 for i in new_coordinate[0:3]) or any(
-                        i > (input_object_voxel.shape[0] + max_dim * 3) for i in new_coordinate[0:3]):
+                if any(i < 0 for i in new_coordinate[0:3]) or \
+                        any(i >= (input_object_voxel.shape[0] + max_dim * 3) for i in new_coordinate[0:3]):
                     pass
                 else:
                     new_object_voxel[new_coordinate[0], new_coordinate[1], new_coordinate[2]] = \
@@ -380,7 +379,7 @@ if __name__ == '__main__':
     # load scenes information from meta files
     csv_loader()
 
-    # json to npy
+    # # json to npy
     # counter = 1
     # if build_json_to_npy:
     #     for json_file in glob.glob('house/*.json'):
