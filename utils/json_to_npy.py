@@ -14,7 +14,7 @@ import numpy as np
 import csv
 import math
 import os
-from   multiprocessing  import Pool
+from multiprocessing import Pool
 
 # ----------------------------------------------------------------------------------
 
@@ -23,8 +23,10 @@ coarse_grained_class = dict()
 
 build_json_to_jsons = False
 json_to_jsons_remove = False
+
 build_json_to_npy = True
 json_to_npy_remove = True
+
 build_ply = False
 
 batch_size_json_to_jsons = 50
@@ -149,6 +151,10 @@ def json_to_npy(json_file_input):
     # determine scene size with respect to the glob_bbox_max - glob_bbox_min
     scene_size = map(int, ((glob_bbox_max - glob_bbox_min) * 100.0) / 6.0)
     scene_size = [i+5 for i in scene_size]
+    if any(i < 0 for i in scene_size):
+        if json_to_npy_remove:
+            os.remove(json_file_input)
+        return
     scene = np.zeros(scene_size)
 
     # put objects in their places
@@ -211,9 +217,9 @@ def json_to_npy(json_file_input):
                     min_coor = [0 if i < 0 else i for i in min_coor]
                     max_coor = [0 if i < 0 else i for i in max_coor]
 
-                    max_coor[0] = max_coor[0] if max_coor[0] < scene.shape[0] else scene.shape[0]
-                    max_coor[1] = max_coor[1] if max_coor[1] < scene.shape[1] else scene.shape[1]
-                    max_coor[2] = max_coor[2] if max_coor[2] < scene.shape[2] else scene.shape[2]
+                    max_coor[0] = max_coor[0] if max_coor[0] < scene.shape[0] else scene.shape[0]-1
+                    max_coor[1] = max_coor[1] if max_coor[1] < scene.shape[1] else scene.shape[1]-1
+                    max_coor[2] = max_coor[2] if max_coor[2] < scene.shape[2] else scene.shape[2]-1
 
                     if min_coor[0] == max_coor[0]:
                         scene[min_coor[0],
