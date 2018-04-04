@@ -4,6 +4,9 @@
 # find . -type d -name -delete
 # find . -type f -size 0c -delete
 
+# screen -X -S "session_name" quit
+# screen -dmSL [session name] [commands]
+
 # ----------------------------------------------------------------------------------
 
 import json
