@@ -26,9 +26,10 @@ coarse_grained_class = dict()
 build_json_to_jsons = False
 json_to_jsons_remove = False
 
-build_json_to_npy = True
+build_json_to_npy = False
 json_to_npy_remove = False
 
+csv_load_flag = False
 build_ply = True
 
 batch_size_json_to_jsons = 50
@@ -380,7 +381,8 @@ if __name__ == '__main__':
             json_reader(json_file)
 
     # load scenes information from meta files
-    csv_loader()
+    if csv_load_flag:
+        csv_loader()
 
     # # json to npy
     # counter = 1
