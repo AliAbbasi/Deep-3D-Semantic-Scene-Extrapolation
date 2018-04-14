@@ -2,16 +2,13 @@ import numpy as np
 import glob
 import sys
 import datetime
+import utils
 
-#------------------------------------------------------------------------
-
-x, y, z = 84, 46, 84 
-scene = np.zeros((x, y, z))
-
-#------------------------------------------------------------------------
+#------------------------------------------------------------------------ 
 
 def npy_cutter(item):
-    global scene
+    x, y, z = 84, 44, 84 
+    scene = np.zeros((x, y, z))
     try:
         x_, y_, z_ = item.shape
     
@@ -44,6 +41,7 @@ def npy_cutter(item):
             # print "999"
     except: 
         pass
+    return scene
 
 #------------------------------------------------------------------------
 
@@ -64,7 +62,7 @@ def validity_test():
         
 #------------------------------------------------------------------------
 
-if __name__ == '__main__':
+def load_time_test():
     counter = 0
     for npy_file in glob.glob('house/*.npy'):
         counter += 1
@@ -73,3 +71,28 @@ if __name__ == '__main__':
         if counter % 128==0:
             print counter
             print datetime.datetime.now().time()
+
+#------------------------------------------------------------------------
+
+def scene_load_and_visualize_test():  
+
+    for npyFile in glob.glob('house/*.npy'): 
+        tr_scene, tr_label = [], [] 
+        scene = npy_cutter(np.load(npyFile))  
+        tr_scene = scene[ 0:84, 0:44, 0:42  ]  # input 
+        tr_label = scene[ 0:84, 0:44, 42:84 ]  # gt   
+        
+        
+        utils.npy_to_ply(str(npyFile) + "_scene_", tr_scene)
+        utils.npy_to_ply(str(npyFile) + "_label_", tr_scene)
+        utils.npy_to_ply(str(npyFile) + "_self_", npy_cutter(np.load(npyFile)))
+        break
+        
+#------------------------------------------------------------------------
+
+if __name__ == '__main__': 
+    # load_time_test()
+    scene_load_and_visualize_test()
+    
+    
+    
