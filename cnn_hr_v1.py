@@ -1,4 +1,6 @@
 
+#====================================================================================================================================================
+
 # Softmax 
 # 91 classes   
 # Input data is 2D 
@@ -80,6 +82,7 @@ def writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1
     output.write( "plt.suptitle('Blue: Train Cost, Green: Valid Cost')" + "\r\n" )
     output.write( "plt.show()                                         " + "\r\n" ) 
     logging.info("costs.py file is created!")
+    print ("costs.py file is created!")
     
     #-----------------------------------------------------------------------------
     
@@ -115,6 +118,7 @@ def writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1
     output.write( "plt.suptitle('Blue: Train Accu, Green: Valid Accu')" + "\r\n" )
     output.write( "plt.show()                                         " + "\r\n" ) 
     logging.info("accuracy.py file is created!")
+    print ("accuracy.py file is created!")
 
 #=====================================================================================================================================================
 
@@ -122,38 +126,33 @@ class ConvNet( object ):
 
     def paramsFun(self): 
         params_w = {
-                    'w1'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , halfed_scene_shape , 64   ], stddev = 0.01 )), 
-                    
-                    'w2'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64   ], stddev = 0.01 )),  
-                    'w3'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64   ], stddev = 0.01 )),
-                    'w4'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64   ], stddev = 0.01 )), 
-                    
-                    'w5'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64   ], stddev = 0.01 )),  
-                    'w6'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64   ], stddev = 0.01 )),  
-                    'w7'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64   ], stddev = 0.01 )),  
-                    
-                    'w8'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64   ], stddev = 0.01 )),  
-                    'w9'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64   ], stddev = 0.01 )),  
-                    'w10'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64   ], stddev = 0.01 )),  
-                    
-                    'w11'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64   ], stddev = 0.01 )),   
-                    'w12'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64   ], stddev = 0.01 )),  
+                    'w1'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , halfed_scene_shape , 64               ], stddev = 0.01 )),  
+                    'w2'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w3'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),
+                    'w4'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w5'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w6'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w7'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w8'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w9'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w10'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),   
+                    'w11'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),   
+                    'w12'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
                     'w13'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , classes_count*halfed_scene_shape ], stddev = 0.01 ))
-                   }
-                    
+                   } 
         params_b = {
-                    'b1'   : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )),  
-                    'b2'   : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )),  
-                    'b3'   : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )), 
-                    'b4'   : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )), 
-                    'b5'   : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )), 
-                    'b6'   : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )), 
-                    'b7'   : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )), 
-                    'b8'   : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )), 
-                    'b9'   : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )), 
-                    'b10'  : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )), 
-                    'b11'  : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )), 
-                    'b12'  : tf.Variable(tf.truncated_normal( [ 64   ], stddev = 0.01 )), 
+                    'b1'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
+                    'b2'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
+                    'b3'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b4'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b5'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b6'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b7'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b8'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b9'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b10'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b11'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b12'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
                     'b13'  : tf.Variable(tf.truncated_normal( [ classes_count*halfed_scene_shape ], stddev = 0.01 ))
                    }
                     
@@ -224,8 +223,8 @@ class ConvNet( object ):
         labels = tf.reshape(self.y,     [-1               ]) 
         
         total  = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits( logits=logits, labels=labels ))
-
-        for w in self.params_w_ :
+        
+        for w in self.params_w_:
             total += tf.nn.l2_loss(self.params_w_[w]) * 0.001 
             
         # penalty term
@@ -276,6 +275,7 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
     
     # Visualize Validation Set 
     logging.info("Creating ply files...") 
+    print ("Creating ply files...") 
     
     flag    = 0
     files   = ''
@@ -310,7 +310,7 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
             
             scn     = np.concatenate(( trData , score ), axis=2 )
             
-            output = open( directory + "/" + test + ".ply" , 'w') 
+            output    = open( directory + "/" + test + ".ply", 'w') 
             ply       = ""
             numOfVrtc = 0
             for idx1 in range(scene_shape[0]):
@@ -337,11 +337,13 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
             output.write( ply                                          ) 
             output.close()
             logging.info(test + ".ply" + " is Done!") 
+            print (test + ".ply" + " is Done!") 
             counter += 1
             
             if counter == 8:
                 if flag == 1:
                     logging.info(".ply files are done!")
+                    print (".ply files are done!")
                     return
                 else:
                     flag = 1
@@ -353,6 +355,7 @@ def show_result(sess) :
 
     # Visualize Validation Set ---------------------------------
     logging.info("Creating ply files...")
+    print ("Creating ply files...")
  
     bs = 0  
     trData, trLabel = [], [] 
@@ -369,6 +372,7 @@ def show_result(sess) :
     score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
     accu1, accu2 = accuFun ( sess, trData, trLabel, bs )     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))
+    print ("A1: %g, A2: %g" % (accu1, accu2))
     
     for test in glob.glob('test/*.npy'): 
         scene = npy_cutter(np.load(test))  
@@ -414,10 +418,12 @@ def show_result(sess) :
         output.write( ply                                          ) 
         output.close()
         logging.info(test + ".ply" + " is Done!")
+        print (test + ".ply" + " is Done!")
         
         break # TODO !!!
     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))    
+    print ("A1: %g, A2: %g" % (accu1, accu2))    
 #===================================================================================================================================================
   
 def accuFun(sess, trData, trLabel, batch_size):
@@ -484,6 +490,9 @@ def npy_cutter(item):
             pass 
     except: 
         pass
+        
+    # TODO: convert to X or Z align
+    # TODO: shift to the middle 
     return scene
         
 #===================================================================================================================================================
@@ -519,11 +528,13 @@ if __name__ == '__main__':
                 new_saver = tf.train.import_meta_graph(directory + '/my-model.meta')
                 new_saver.restore(sess, tf.train.latest_checkpoint(directory)) 
                 logging.info("\r\n------------ Saved weights restored. ------------")
+                print ("\r\n------------ Saved weights restored. ------------")
                 
         # -------------- test phase --------------
         if to_train == False:  
             show_result(sess) 
             logging.info(".ply files are created.!")
+            print (".ply files are created.!")
             sys.exit(0)
         
         # -------------- train phase --------------
@@ -544,6 +555,7 @@ if __name__ == '__main__':
         while(epoch < maxEpoch):    
             saver.save(sess, directory + '/my-model') 
             logging.info("\r\n Model saved! \r\n") 
+            print ("\r\n Model saved! \r\n") 
             
             for npyFile in glob.glob('house/*.npy'): 
                 trData, trLabel = [], [] 
@@ -567,6 +579,7 @@ if __name__ == '__main__':
 
                     if step%1 == 0: 
                         logging.info("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
+                        print       ("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
                     # -------------- accuracy calculator --------------  
                     if step%500 == 0:   
                         accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size) 
@@ -582,7 +595,9 @@ if __name__ == '__main__':
             # END for binFile in glob 
             epoch += 1     
             logging.info(" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
+            print (" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
         logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
+        print (" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
         
 #========================================================================================================================================================
  
