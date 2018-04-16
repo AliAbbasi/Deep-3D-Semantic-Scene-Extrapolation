@@ -1,12 +1,8 @@
 
 #====================================================================================================================================================
 
-# Softmax 
-# 91 classes   
-# Input data is 2D 
-# Each scene is 84 x 44 x 84   
-# Architecture with 4 res block
-# V1 penalty 
+# 91 category of objects    
+# scene size: 84 x 44 x 84     
 
 #====================================================================================================================================================
 
@@ -25,6 +21,7 @@ halfed_scene_shape = scene_shape[2] / 2
 classes_count = 91
 to_train = False
 to_restore = True
+
 logging.basicConfig(filename='cnn_hr_v1.log',level=logging.DEBUG)
 directory  = 'cnn_hr_v1'
 if not os.path.exists(directory):
@@ -154,8 +151,8 @@ class ConvNet( object ):
                     'b11'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
                     'b12'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
                     'b13'  : tf.Variable(tf.truncated_normal( [ classes_count*halfed_scene_shape ], stddev = 0.01 ))
-                   }
-                    
+                   } 
+                   
         return params_w,params_b
 
     #=================================================================================================================================================
@@ -351,12 +348,12 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
                     
 #===================================================================================================================================================
 
-def show_result(sess) : 
+def show_result(sess):
 
-    # Visualize Validation Set ---------------------------------
+    # Visualize Validation Set
     logging.info("Creating ply files...")
     print ("Creating ply files...")
- 
+    
     bs = 0  
     trData, trLabel = [], [] 
     batch_arr = []
@@ -364,13 +361,13 @@ def show_result(sess) :
         batch_arr.append(npy_cutter(np.load(test)))
         bs += 1
         break # TODO  !!!
-    
+        
     batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
     trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
     trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt     
-    trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
-    score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
-    accu1, accu2 = accuFun ( sess, trData, trLabel, bs )     
+    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))  
+    score   = sess.run(ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
+    accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))
     print ("A1: %g, A2: %g" % (accu1, accu2))
     
@@ -381,7 +378,7 @@ def show_result(sess) :
         trData  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
         trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt     
         
-        trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
+        trData  = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
         score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
         score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
         score   = np.argmax ( score, 3)     
@@ -423,7 +420,8 @@ def show_result(sess) :
         break # TODO !!!
     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))    
-    print ("A1: %g, A2: %g" % (accu1, accu2))    
+    print ("A1: %g, A2: %g" % (accu1, accu2))   
+    
 #===================================================================================================================================================
   
 def accuFun(sess, trData, trLabel, batch_size):
