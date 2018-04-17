@@ -526,7 +526,7 @@ if __name__ == '__main__':
                 new_saver = tf.train.import_meta_graph(directory + '/my-model.meta')
                 new_saver.restore(sess, tf.train.latest_checkpoint(directory)) 
                 logging.info("\r\n------------ Saved weights restored. ------------")
-                print ("\r\n------------ Saved weights restored. ------------")
+                print       ("\r\n------------ Saved weights restored. ------------")
                 
         # -------------- test phase --------------
         if to_train == False:  
@@ -593,9 +593,9 @@ if __name__ == '__main__':
             # END for binFile in glob 
             epoch += 1     
             logging.info(" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
-            print (" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
+            print       (" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
         logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
-        print (" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
+        print       (" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
         
 #========================================================================================================================================================
  

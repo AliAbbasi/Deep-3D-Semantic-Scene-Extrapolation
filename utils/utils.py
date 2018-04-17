@@ -1,7 +1,7 @@
 import numpy as np
 import glob
 
-# ====================================================================================================================
+#====================================================================================================================
 
 colors = [" 0 0 0 255       ", " 173 216 230 255 ", " 0 128 0 255     ", " 0 128 0 255     ",
           " 0 0 255 255     ", " 255 0 0 255     ", " 218 165 32 255  ", " 210 180 140 255 ",
@@ -30,7 +30,7 @@ colors = [" 0 0 0 255       ", " 173 216 230 255 ", " 0 128 0 255     ", " 0 128
           " 23 175 34 255   ", " 118 144 216 255 ", " 32 128 149 255  ", " 200 185 126 255 ",
           " 114 11 76 255   ", " 28 60 36 255    ", " 168 148 36 255  ", " 57 246 83 255   "]
           
-# ====================================================================================================================
+#====================================================================================================================
 
 def write_cost_and_accuracy(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2):
     output = open(directory + "/costs.py", 'w')
@@ -87,7 +87,7 @@ def write_cost_and_accuracy(directory, train_cost, valid_cost, train_accu1, trai
     output.write("plt.show()                                         " + "\r\n")
     print("accuracy.py file is created!")
 
-# ====================================================================================================================
+#====================================================================================================================
 
 def backup(directory, sess, saver, writer, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2):
     print("Saving the model...")
@@ -194,7 +194,7 @@ def backup(directory, sess, saver, writer, train_cost, valid_cost, train_accu1, 
                     flag = 1
                     break
                     
-# ====================================================================================================================
+#====================================================================================================================
 
 def npy_to_ply(name, input_npy_file):  # the input is a npy file
     output_scene = input_npy_file
@@ -226,5 +226,81 @@ def npy_to_ply(name, input_npy_file):  # the input is a npy file
     output.close()
     print (str(name) + ".ply is Done.!")
 
-# ====================================================================================================================
+#====================================================================================================================
 
+def npy_cutter(item):
+    x, y, z = 84, 44, 84 
+    scene = np.zeros((x, y, z))
+    try:
+        x_, y_, z_ = item.shape
+    
+        if   x<=x_ and y<=y_ and z<=z_: 
+            scene           =item[:x, :y, :z] 
+        elif x<=x_ and y>=y_ and z<=z_:
+            scene[:, :y_, :]=item[:x, :, :z] 
+        elif x<=x_ and y<=y_ and z>=z_:
+            scene[:, :, :z_]=item[:x, :y, :] 
+        elif x<=x_ and y>=y_ and z>=z_: 
+            scene[:, :y_, :z_]=item[:x, :, :]  
+        elif x>=x_ and y<=y_ and z<=z_:
+            scene[:x_, :, :]=item[:, :y, :z] 
+        elif x>=x_ and y>=y_ and z<=z_:
+            scene[:x_, :y_, :]=item[:, :, :z] 
+        elif x>=x_ and y<=y_ and z>=z_:
+            scene[:x_, :, :z_]=item[:, :y, :] 
+        elif x>=x_ and y>=y_ and z>=z_:
+            scene[:x_, :y_, :z_]=item 
+        else: 
+            pass 
+    except: 
+        pass
+    return scene
+
+#====================================================================================================================
+
+def validity_test():
+    test_arr = []
+    test_arr.append(np.ones((100,100,100))) 
+    test_arr.append(np.ones((100,40,100)) )
+    test_arr.append(np.ones((100,100,40)) )
+    test_arr.append(np.ones((100,40,40))  )  
+    test_arr.append(np.ones((40,100,100)) )
+    test_arr.append(np.ones((40,40,100))  )
+    test_arr.append(np.ones((40,100,40))  )
+    test_arr.append(np.ones((40,40,40))   )
+    test_arr.append(np.ones((84,46,84))   )
+    test_arr.append(np.ones((90,46,80))   )
+    for item in test_arr: 
+        npy_cutter(item) 
+        
+#====================================================================================================================
+
+def load_time_test():
+    counter = 0
+    for npy_file in glob.glob('house/*.npy'):
+        counter += 1
+        item = np.load(npy_file)
+        npy_cutter(item)
+        if counter % 128==0:
+            print counter
+            print datetime.datetime.now().time()
+
+#====================================================================================================================
+
+def scene_load_and_visualize_test():   
+    for npyFile in glob.glob('house/*.npy'): 
+        tr_scene, tr_label = [], [] 
+        scene = npy_cutter(np.load(npyFile))  
+        tr_scene = scene[ 0:84, 0:44, 0:42  ]  # input 
+        tr_label = scene[ 0:84, 0:44, 42:84 ]  # gt   
+        
+        utils.npy_to_ply(str(npyFile) + "_scene_", tr_scene)
+        utils.npy_to_ply(str(npyFile) + "_label_", tr_scene)
+        utils.npy_to_ply(str(npyFile) + "_self_", npy_cutter(np.load(npyFile)))
+        break
+        
+#====================================================================================================================
+
+if __name__ == '__main__':
+    # load_time_test()
+    # scene_load_and_visualize_test()
