@@ -1,3 +1,6 @@
+
+#====================================================================================================================
+
 import numpy as np
 import glob
 
@@ -304,3 +307,5 @@ def scene_load_and_visualize_test():
 if __name__ == '__main__':
     # load_time_test()
     # scene_load_and_visualize_test()
+    
+    # TODO: load scenes and add 0 padding to them, then visualize them with border 
