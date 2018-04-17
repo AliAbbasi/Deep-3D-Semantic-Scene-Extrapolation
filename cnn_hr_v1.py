@@ -312,7 +312,7 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
             numOfVrtc = 0
             for idx1 in range(scene_shape[0]):
                 for idx2 in range(scene_shape[1]): 
-                    for idx3 in range(scene_shape[2] - 1):   # TODO: decrease it one unit !!! 
+                    for idx3 in range(scene_shape[2] - 1): 
                         if scn[idx1][idx2][idx3] > 0:  
                             ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(colors[ int(scn[idx1][idx2][idx3]) ]) + "\n" 
                             numOfVrtc += 1
