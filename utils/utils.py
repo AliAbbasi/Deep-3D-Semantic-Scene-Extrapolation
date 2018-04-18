@@ -199,6 +199,7 @@ def backup(directory, sess, saver, writer, train_cost, valid_cost, train_accu1, 
                     
 #====================================================================================================================
 
+# TODO: add directory to save as input argument
 def npy_to_ply(name, input_npy_file):  # the input is a npy file
     output_scene = input_npy_file
     output = open(str(name) + ".ply", 'w')
@@ -309,3 +310,4 @@ if __name__ == '__main__':
     # scene_load_and_visualize_test()
     
     # TODO: load scenes and add 0 padding to them, then visualize them with border 
+    pass
