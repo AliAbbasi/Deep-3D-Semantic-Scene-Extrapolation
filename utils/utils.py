@@ -304,8 +304,20 @@ def scene_load_and_visualize_test():
         
 #====================================================================================================================
 
+def show_scene_size():
+    counter = 0
+    for npyFile in glob.glob('house/*.npy'): 
+        dims = np.load(npyFile).shape
+        if dims[0] < 84 or dims[1] < 44 or dims[2] < 84:
+            counter += 1
+        if counter % 1000 == 0:
+            print counter
+    print ("final count: ", counter)
+    
+#====================================================================================================================
+
 if __name__ == '__main__':
     # load_time_test()
     # scene_load_and_visualize_test()
-    
-    # TODO: load scenes and add 0 padding to them, then visualize them with border 
+    show_scene_size()
+    pass
