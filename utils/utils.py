@@ -292,33 +292,35 @@ def load_time_test():
 #====================================================================================================================
 
 def scene_load_and_visualize_test():   
-    for npyFile in glob.glob('house/*.npy'): 
+    for npyFile in glob.glob('house/*.npy'):  
         tr_scene, tr_label = [], [] 
         scene = npy_cutter(np.load(npyFile))  
         tr_scene = scene[ 0:84, 0:44, 0:42  ]  # input 
         tr_label = scene[ 0:84, 0:44, 42:84 ]  # gt   
         
-        utils.npy_to_ply(str(npyFile) + "_scene_", tr_scene)
-        utils.npy_to_ply(str(npyFile) + "_label_", tr_scene)
-        utils.npy_to_ply(str(npyFile) + "_self_", npy_cutter(np.load(npyFile)))
+        npy_to_ply(str(npyFile) + "_scene_", tr_scene)
+        npy_to_ply(str(npyFile) + "_label_", tr_scene)
+        npy_to_ply(str(npyFile) + "_self_", npy_cutter(np.load(npyFile)))
         break
         
 #====================================================================================================================
 
 def show_scene_size():
     counter = 0
+    all = 0
     for npyFile in glob.glob('house/*.npy'): 
+        all += 1
         dims = np.load(npyFile).shape
         if dims[0] < 84 or dims[1] < 44 or dims[2] < 84:
             counter += 1
-        if counter % 1000 == 0:
-            print counter
-    print ("final count: ", counter)
+            if counter % 1000 == 0:
+                print counter, all
+    print ("final count: ", counter, all)
     
 #====================================================================================================================
 
 if __name__ == '__main__':
     # load_time_test()
-    # scene_load_and_visualize_test() 
-    show_scene_size()
+    scene_load_and_visualize_test() 
+    # show_scene_size()
     pass 
