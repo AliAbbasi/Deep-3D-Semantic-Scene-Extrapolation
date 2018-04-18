@@ -13,49 +13,23 @@ from   numpy            import array
 from   collections      import Counter
 from   multiprocessing  import Pool 
 import tensorflow       as     tf 
+import utils # TODO fix it later
 
 #====================================================================================================================================================
 
 scene_shape = [84, 44, 84]
 halfed_scene_shape = scene_shape[2] / 2
+
 classes_count = 91
-to_train = False
-to_restore = True
+
+to_train   = True
+to_restore = False
 
 logging.basicConfig(filename='cnn_hr_v1.log',level=logging.DEBUG)
 directory  = 'cnn_hr_v1'
 if not os.path.exists(directory):
-    os.makedirs(directory)
+    os.makedirs(directory) 
     
-#=====================================================================================================================================================
-
-colors = [" 0 0 0 255       ", " 173 216 230 255 ", " 0 128 0 255     ", " 0 128 0 255     ",
-          " 0 0 255 255     ", " 255 0 0 255     ", " 218 165 32 255  ", " 210 180 140 255 ",
-          " 128 0   128 255 ", " 0  0 139 255    ", " 255 255 0 255   ", " 128 128 128 255 ",
-          " 0 100 0 255     ", " 255 165 0 255   ", " 138 118 200 255 ", " 236 206 244 255 ",
-          " 126 172 209 255 ", " 237 112 24 255  ", " 158 197 220 255 ", " 21 240 24 255   ",
-          " 90 29 205 255   ", " 183 246 66 255  ", " 224 54 238 255  ", " 39 129 50 255   ",
-          " 252 204 171 255 ", " 255 18 39 255   ", " 118 76 69 255   ", " 139 212 79 255  ",
-          " 46 14 67 255    ", " 142 113 129 255 ", " 30 14 35 255    ", " 17 90 54 255    ",
-          " 125 89 247 255  ", " 166 18 75 255   ", " 129 142 18 255  ", " 147 10 255 255  ",
-          " 32 168 135 255  ", " 245 199 6 255   ", " 231 118 238 255 ", " 84 35 213 255   ",
-          " 214 230 80 255  ", " 236 23 17 255   ", " 92 207 229 255  ", " 49 243 237 255  ",
-          " 252 23 25 255   ", " 209 224 126 255 ", " 111 54 3 255    ", " 96 11 79 255    ",
-          " 169 56 226 255  ", " 169 68 202 255  ", " 107 32 121 255  ", " 158 3 146 255   ",
-          " 68 57 54 255    ", " 212 200 217 255 ", " 17 30 170 255   ", " 254 162 238 255 ",
-          " 16 120 52 255   ", " 104 48 251 255  ", " 176 49 253 255  ", " 67 84 223 255   ",
-          " 101 88 52 255   ", " 204 50 193 255  ", " 56 209 118 255  ", " 79 74 216 255   ",
-          " 104 142 255 255 ", " 15 228 195 255  ", " 185 168 157 255 ", " 227 7 222 255   ",
-          " 243 188 17 255  ", " 20 85 135 255   ", " 95 27 18 255    ", " 189 126 21 255  ",
-          " 69 254 247 255  ", " 84 91 111 255   ", " 8 153 222 255   ", " 188 72 148 255  ",
-          " 218 50 8 255    ", " 183 217 27 255  ", " 61 4 234 255    ", " 31 113 81 255   ",
-          " 75 130 78 255   ", " 128 232 57 255  ", " 16 183 77 255   ", " 91 43 145 255   ",
-          " 38 19 130 255   ", " 64 236 113 255  ", " 248 3 144 255   ", " 194 157 62 255  ",
-          " 143 219 101 255 ", " 136 37 208 255  ", " 102 144 241 255 ", " 158 126 247 255 ",
-          " 40 207 130 255  ", " 88 131 224 255  ", " 175 30 23 255   ", " 42 224 197 255  ",
-          " 23 175 34 255   ", " 118 144 216 255 ", " 32 128 149 255  ", " 200 185 126 255 ",
-          " 114 11 76 255   ", " 28 60 36 255    ", " 168 148 36 255  ", " 57 246 83 255   "]
-
 #=====================================================================================================================================================
 
 def writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2): 
@@ -264,7 +238,8 @@ class ConvNet( object ):
 #===================================================================================================================================================
 
 def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) :
-    print "Saving the model..." 
+    logging.info("Saving the model...") 
+    print       ("Saving the model...") 
     saver.save(sess, directory + '/my-model')    
     writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2)    
     
@@ -272,7 +247,7 @@ def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_
     
     # Visualize Validation Set 
     logging.info("Creating ply files...") 
-    print ("Creating ply files...") 
+    print       ("Creating ply files...") 
     
     flag    = 0
     files   = ''
@@ -359,8 +334,7 @@ def show_result(sess):
     batch_arr = []
     for test in glob.glob('test/*.npy'):  
         batch_arr.append(npy_cutter(np.load(test)))
-        bs += 1
-        break # TODO  !!!
+        bs += 1 
         
     batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
     trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
@@ -369,14 +343,14 @@ def show_result(sess):
     score   = sess.run(ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
     accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))
-    print ("A1: %g, A2: %g" % (accu1, accu2))
+    print       ("A1: %g, A2: %g" % (accu1, accu2))
     
     for test in glob.glob('test/*.npy'): 
         scene = npy_cutter(np.load(test))  
         trData, trLabel = [], []   
 
         trData  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
-        trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt     
+        trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
         
         trData  = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
         score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
@@ -395,7 +369,7 @@ def show_result(sess):
             for idx2 in range(scene_shape[1]): 
                 for idx3 in range(scene_shape[2] - 1):  
                     if scn[idx1][idx2][idx3] > 0:  
-                        ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(colors[ int(scn[idx1][idx2][idx3]) ]) + "\n" 
+                        ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(utils.colors[ int(scn[idx1][idx2][idx3]) ]) + "\n" 
                         numOfVrtc += 1
                         
         output.write("ply"                                   + "\n")
@@ -415,12 +389,10 @@ def show_result(sess):
         output.write( ply                                          ) 
         output.close()
         logging.info(test + ".ply" + " is Done!")
-        print (test + ".ply" + " is Done!")
-        
-        break # TODO !!!
+        print       (test + ".ply" + " is Done!") 
     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))    
-    print ("A1: %g, A2: %g" % (accu1, accu2))   
+    print       ("A1: %g, A2: %g" % (accu1, accu2))   
     
 #===================================================================================================================================================
   
@@ -468,21 +440,21 @@ def npy_cutter(item):
     try:
         x_, y_, z_ = item.shape
     
-        if   x<=x_ and y<=y_ and z<=z_: 
-            scene           =item[:x, :y, :z] 
-        elif x<=x_ and y>=y_ and z<=z_:
-            scene[:, :y_, :]=item[:x, :, :z] 
-        elif x<=x_ and y<=y_ and z>=z_:
-            scene[:, :, :z_]=item[:x, :y, :] 
-        elif x<=x_ and y>=y_ and z>=z_: 
-            scene[:, :y_, :z_]=item[:x, :, :]  
-        elif x>=x_ and y<=y_ and z<=z_:
-            scene[:x_, :, :]=item[:, :y, :z] 
-        elif x>=x_ and y>=y_ and z<=z_:
-            scene[:x_, :y_, :]=item[:, :, :z] 
-        elif x>=x_ and y<=y_ and z>=z_:
-            scene[:x_, :, :z_]=item[:, :y, :] 
-        elif x>=x_ and y>=y_ and z>=z_:
+        if   scene_shape[0]<=x_ and scene_shape[1]<=y_ and scene_shape[2]<=z_: 
+            scene           =item[:scene_shape[0], :scene_shape[1], :scene_shape[2]] 
+        elif scene_shape[0]<=x_ and scene_shape[1]>=y_ and scene_shape[2]<=z_:
+            scene[:, :y_, :]=item[:scene_shape[0], :, :scene_shape[2]] 
+        elif scene_shape[0]<=x_ and scene_shape[1]<=y_ and scene_shape[2]>=z_:
+            scene[:, :, :z_]=item[:scene_shape[0], :scene_shape[1], :] 
+        elif scene_shape[0]<=x_ and scene_shape[1]>=y_ and scene_shape[2]>=z_: 
+            scene[:, :y_, :z_]=item[:scene_shape[0], :, :]  
+        elif scene_shape[0]>=x_ and scene_shape[1]<=y_ and scene_shape[2]<=z_:
+            scene[:x_, :, :]=item[:, :scene_shape[1], :scene_shape[2]] 
+        elif scene_shape[0]>=x_ and scene_shape[1]>=y_ and scene_shape[2]<=z_:
+            scene[:x_, :y_, :]=item[:, :, :scene_shape[2]] 
+        elif scene_shape[0]>=x_ and scene_shape[1]<=y_ and scene_shape[2]>=z_:
+            scene[:x_, :, :z_]=item[:, :scene_shape[1], :] 
+        elif scene_shape[0]>=x_ and scene_shape[1]>=y_ and scene_shape[2]>=z_:
             scene[:x_, :y_, :z_]=item 
         else: 
             pass 
@@ -512,6 +484,8 @@ if __name__ == '__main__':
     initVar       = tf.global_variables_initializer() 
     saver         = tf.train.Saver()
     
+    # prevent to add extra node to graph during training
+    tf.get_default_graph().finalize()
     # log_device_placement: shows the log of which task will work on which device.
     # allow_soft_placement: TF choose automatically the available device
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess: 
@@ -580,8 +554,7 @@ if __name__ == '__main__':
                         print       ("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
                     # -------------- accuracy calculator --------------  
                     if step%500 == 0:   
-                        accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size) 
-                        tf.reset_default_graph()
+                        accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size)  
                         
                     # -------------- write cost and accuracy --------------  
                     if step%1000 == 0: 
