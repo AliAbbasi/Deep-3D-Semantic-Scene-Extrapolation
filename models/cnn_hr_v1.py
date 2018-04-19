@@ -435,7 +435,7 @@ def accuFun(sess, trData, trLabel, batch_size):
 
 #===================================================================================================================================================
 
-def npy_cutter(item):
+def npy_cutter(item):   # Should take 'scene_shape' as input argument then add this fun to utils
     scene = np.zeros((scene_shape[0], scene_shape[1], scene_shape[2]))
     try:
         x_, y_, z_ = item.shape
@@ -480,8 +480,8 @@ if __name__ == '__main__':
     dropOut       = 0.5
     batch_size    = 32
     maxEpoch      = 50
-    ConvNet_class = ConvNet(x,y,lr,keepProb,phase)
-    initVar       = tf.global_variables_initializer() 
+    ConvNet_class = ConvNet(x, y, lr, keepProb, phase)
+    init_var      = tf.global_variables_initializer() 
     saver         = tf.train.Saver()
     
     # prevent to add extra node to graph during training
@@ -489,9 +489,9 @@ if __name__ == '__main__':
         tf.get_default_graph().finalize()
     # log_device_placement: shows the log of which task will work on which device.
     # allow_soft_placement: TF choose automatically the available device
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess: 
-    
-        sess.run(initVar)
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:  
+        sess.run(init_var)
+        
         if os.path.exists(logPath):
             shutil.rmtree(logPath) 
         
@@ -514,7 +514,7 @@ if __name__ == '__main__':
         step         = 0
         counter      = 0
         epoch        = 1 
-        alr          = 0.00005
+        alr          = 0.00001
         train_cost   = []
         valid_cost   = []
         train_accu1  = []
