@@ -485,7 +485,8 @@ if __name__ == '__main__':
     saver         = tf.train.Saver()
     
     # prevent to add extra node to graph during training
-    tf.get_default_graph().finalize()
+    if to_train:
+        tf.get_default_graph().finalize()
     # log_device_placement: shows the log of which task will work on which device.
     # allow_soft_placement: TF choose automatically the available device
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess: 
