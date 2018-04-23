@@ -17,19 +17,24 @@ import utils # TODO fix it later
 
 #====================================================================================================================================================
 
+classes_count = 91
 scene_shape = [84, 44, 84]
 halfed_scene_shape = scene_shape[2] / 2
-
-classes_count = 91
-
-to_train   = True
-to_restore = False
 
 logging.basicConfig(filename='cnn_hr_v1.log',level=logging.DEBUG)
 directory  = 'cnn_hr_v1'
 if not os.path.exists(directory):
     os.makedirs(directory) 
     
+#=====================================================================================================================================================
+
+to_train = True
+to_restore = False
+show_accuracy = True
+show_accuracy_step = 100
+save_model = False
+save_model_step = 1000
+
 #=====================================================================================================================================================
 
 def writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2): 
@@ -517,6 +522,9 @@ if __name__ == '__main__':
 
                     trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
                     trLabel = np.reshape( trLabel, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape )) 
+                    
+                    trData /= 91.0
+                    trLabel /= 91.0
                    
                     sess.run(ConvNet_class.update, feed_dict={x: trData, y: trLabel, lr: alr, keepProb: dropOut, phase: True})   
                     cost = sess.run(ConvNet_class.cost, feed_dict={x: trData, y: trLabel, keepProb: 1.0, phase: True}) 
@@ -526,13 +534,13 @@ if __name__ == '__main__':
                         logging.info("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
                         print       ("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
                     # -------------- accuracy calculator --------------  
-                    if step%500 == 0:   
+                    if step%show_accuracy_step == 0 and show_accuracy:   
                         accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size)  
                         train_accu1.append(accu1tr)
                         train_accu2.append(accu2tr)
                         
-                    # -------------- write cost and accuracy --------------  
-                    if step%1000 == 0: 
+                    # -------------- save mode, write cost and accuracy --------------  
+                    if step%save_model_step == 0 and save_model: 
                         backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2)  
                     
                     step += 1  
