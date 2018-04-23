@@ -232,8 +232,8 @@ def npy_to_ply(name, input_npy_file):  # the input is a npy file
 
 #====================================================================================================================
 
-def npy_cutter(item):
-    x, y, z = 84, 44, 84 
+def npy_cutter(item, scene_shape):
+    x, y, z = scene_shape[0], scene_shape[1], scene_shape[2]
     scene = np.zeros((x, y, z))
     try:
         x_, y_, z_ = item.shape
@@ -276,7 +276,7 @@ def validity_test():
     test_arr.append(np.ones((84,46,84))   )
     test_arr.append(np.ones((90,46,80))   )
     for item in test_arr: 
-        npy_cutter(item) 
+        npy_cutter(item, item.shape) 
         
 #====================================================================================================================
 
@@ -285,7 +285,7 @@ def load_time_test():
     for npy_file in glob.glob('house/*.npy'):
         counter += 1
         item = np.load(npy_file)
-        npy_cutter(item)
+        npy_cutter(item, item.shape)
         if counter % 128==0:
             print counter
             print datetime.datetime.now().time()
@@ -295,13 +295,13 @@ def load_time_test():
 def scene_load_and_visualize_test():   
     for npy_file in glob.glob('house/*.npy'):  
         tr_scene, tr_label = [], [] 
-        scene = npy_cutter(np.load(npy_file))  
+        scene = npy_cutter(np.load(npy_file), np.load(npy_file).shape)  
         tr_scene = scene[ 0:84, 0:44, 0:42  ]  # input 
         tr_label = scene[ 0:84, 0:44, 42:84 ]  # gt   
         
         npy_to_ply(str(npy_file) + "_scene_", tr_scene)
         npy_to_ply(str(npy_file) + "_label_", tr_scene)
-        npy_to_ply(str(npy_file) + "_self_", npy_cutter(np.load(npy_file)))
+        npy_to_ply(str(npy_file) + "_self_", npy_cutter(np.load(npy_file), np.load(npy_file).shape))
         break
         
 #====================================================================================================================
@@ -326,7 +326,7 @@ def npy_cutter_test():
             print "file name: " , str(npy_file)
             item = np.load(npy_file)
             print item.shape
-            scene = npy_cutter(item) 
+            scene = npy_cutter(item, item.shape) 
             train_scene = scene[ :, : ,  0:42]
             label_scene = scene[ :, : , 42:88]
             npy_to_ply( str(npy_file) + "train_scene", train_scene)
