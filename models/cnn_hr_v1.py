@@ -333,7 +333,8 @@ def show_result(sess):
     trData, trLabel = [], [] 
     batch_arr = []
     for test in glob.glob('test/*.npy'):  
-        batch_arr.append(npy_cutter(np.load(test)))
+        loaded_file = np.load(test)
+        batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
         bs += 1 
         
     batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
@@ -346,7 +347,8 @@ def show_result(sess):
     print       ("A1: %g, A2: %g" % (accu1, accu2))
     
     for test in glob.glob('test/*.npy'): 
-        scene = npy_cutter(np.load(test))  
+        loaded_file = np.load(test)
+        scene = utils.npy_cutter(loaded_file, scene_shape)
         trData, trLabel = [], []   
 
         trData  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
@@ -433,39 +435,7 @@ def accuFun(sess, trData, trLabel, batch_size):
     
     return totalAccuOveral, totalAccuOccupied
 
-#===================================================================================================================================================
-
-def npy_cutter(item):   # Should take 'scene_shape' as input argument then add this fun to utils
-    scene = np.zeros((scene_shape[0], scene_shape[1], scene_shape[2]))
-    try:
-        x_, y_, z_ = item.shape
-    
-        if   scene_shape[0]<=x_ and scene_shape[1]<=y_ and scene_shape[2]<=z_: 
-            scene           =item[:scene_shape[0], :scene_shape[1], :scene_shape[2]] 
-        elif scene_shape[0]<=x_ and scene_shape[1]>=y_ and scene_shape[2]<=z_:
-            scene[:, :y_, :]=item[:scene_shape[0], :, :scene_shape[2]] 
-        elif scene_shape[0]<=x_ and scene_shape[1]<=y_ and scene_shape[2]>=z_:
-            scene[:, :, :z_]=item[:scene_shape[0], :scene_shape[1], :] 
-        elif scene_shape[0]<=x_ and scene_shape[1]>=y_ and scene_shape[2]>=z_: 
-            scene[:, :y_, :z_]=item[:scene_shape[0], :, :]  
-        elif scene_shape[0]>=x_ and scene_shape[1]<=y_ and scene_shape[2]<=z_:
-            scene[:x_, :, :]=item[:, :scene_shape[1], :scene_shape[2]] 
-        elif scene_shape[0]>=x_ and scene_shape[1]>=y_ and scene_shape[2]<=z_:
-            scene[:x_, :y_, :]=item[:, :, :scene_shape[2]] 
-        elif scene_shape[0]>=x_ and scene_shape[1]<=y_ and scene_shape[2]>=z_:
-            scene[:x_, :, :z_]=item[:, :scene_shape[1], :] 
-        elif scene_shape[0]>=x_ and scene_shape[1]>=y_ and scene_shape[2]>=z_:
-            scene[:x_, :y_, :z_]=item 
-        else: 
-            pass 
-    except: 
-        pass
-        
-    # TODO: convert to X or Z align
-    # TODO: shift to the middle 
-    return scene
-        
-#===================================================================================================================================================
+#=================================================================================================================================================== 
 
 if __name__ == '__main__':
 
@@ -534,7 +504,8 @@ if __name__ == '__main__':
                 trData, trLabel = [], [] 
                 
                 if counter < batch_size:  
-                    scene = npy_cutter(np.load(npyFile)) 
+                    loaded_scene = np.load(npyFile)
+                    scene = utils.npy_cutter(loaded_scene, scene_shape) 
                     batch.append(scene)
                     counter += 1   
                 else: 
