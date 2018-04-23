@@ -548,7 +548,8 @@ if __name__ == '__main__':
                     trLabel = np.reshape( trLabel, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape )) 
                    
                     sess.run(ConvNet_class.update, feed_dict={x: trData, y: trLabel, lr: alr, keepProb: dropOut, phase: True})   
-                    cost = sess.run(ConvNet_class.cost, feed_dict={x: trData, y: trLabel, keepProb: 1.0, phase: True})
+                    cost = sess.run(ConvNet_class.cost, feed_dict={x: trData, y: trLabel, keepProb: 1.0, phase: True}) 
+                    train_cost.append(cost)
 
                     if step%1 == 0: 
                         logging.info("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
@@ -556,6 +557,8 @@ if __name__ == '__main__':
                     # -------------- accuracy calculator --------------  
                     if step%500 == 0:   
                         accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size)  
+                        train_accu1.append(accu1tr)
+                        train_accu2.append(accu2tr)
                         
                     # -------------- write cost and accuracy --------------  
                     if step%1000 == 0: 
