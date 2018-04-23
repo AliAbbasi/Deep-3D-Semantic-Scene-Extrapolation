@@ -28,12 +28,12 @@ if not os.path.exists(directory):
     
 #=====================================================================================================================================================
 
-to_train = True
-to_restore = False
-show_accuracy = True
-show_accuracy_step = 100
-save_model = False
-save_model_step = 1000
+to_train           = True
+to_restore         = False
+show_accuracy      = True
+show_accuracy_step = 500
+save_model         = False
+save_model_step    = 1000
 
 #=====================================================================================================================================================
 
@@ -141,9 +141,7 @@ class ConvNet( object ):
         def conv2d(x, w, b, name="conv_biased", strides=1):
             with tf.name_scope(name):
                 x = tf.nn.conv2d(x, w, strides=[1, strides, strides, 1], padding='SAME')
-                x = tf.nn.bias_add(x, b)
-                tf.summary.histogram("weights", w)
-                tf.summary.histogram("biases",  b) 
+                x = tf.nn.bias_add(x, b) 
                 return x  
                 
         #---------------------------------------------------------------------------------------------------------------------------------------------
@@ -163,7 +161,7 @@ class ConvNet( object ):
         conv_r1_3 = tf.nn.relu( conv2d( conv_r1_2, self.params_w_['w3'], self.params_b_['b3'], "conv_r1_3" ) ) 
         conv_r1_4 =             conv2d( conv_r1_3, self.params_w_['w4'], self.params_b_['b4'], "conv_r1_4" ) 
 
-        merge_1   = tf.add_n([conv_1, conv_r1_4])  
+        merge_1   = tf.add_n([conv_1, conv_r1_4])
         
         # Residual Block #2
         conv_r2_1 = tf.nn.relu( merge_1 )  
@@ -181,6 +179,7 @@ class ConvNet( object ):
         
         merge_3   = tf.nn.relu( tf.add_n([merge_2, conv_r3_4]) ) 
         
+        # Residual Block #4
         conv_2    = tf.nn.relu( conv2d( merge_3, self.params_w_['w11'], self.params_b_['b11'], "conv_2" ) )  
         conv_3    = tf.nn.relu( conv2d( conv_2,  self.params_w_['w12'], self.params_b_['b12'], "conv_3" ) )
         
@@ -201,7 +200,7 @@ class ConvNet( object ):
         total  = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits( logits=logits, labels=labels ))
         
         for w in self.params_w_:
-            total += tf.nn.l2_loss(self.params_w_[w]) * 0.001 
+            total += tf.nn.l2_loss(self.params_w_[w]) * 0.005 
             
         # penalty term
         logits       = tf.reshape(self.score, [-1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count])
@@ -212,18 +211,12 @@ class ConvNet( object ):
         for i in range(1,len(split_logits)):
             total += tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=split_logits[i], labels=split_labels[i-1]))
             
-        tf.summary.scalar("loss", total)  
         return total
         
     #------------------------------------------------------------------------------------------------------------------------------------------------    
     
     def updateFun(self):
-        return tf.train.AdamOptimizer(learning_rate = self.lr).minimize(self.cost)
-
-    #------------------------------------------------------------------------------------------------------------------------------------------------
-    
-    def sumFun(self):
-        return tf.summary.merge_all()
+        return tf.train.AdamOptimizer(learning_rate = self.lr).minimize(self.cost) 
         
    #--------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -237,8 +230,7 @@ class ConvNet( object ):
         [self.params_w_, self.params_b_] = ConvNet.paramsFun(self) # initialization and packing the parameters
         self.score                       = ConvNet.scoreFun (self) # Computing the score function     
         self.cost                        = ConvNet.costFun  (self) # Computing the cost function 
-        self.update                      = ConvNet.updateFun(self) # Computing the update function
-        self.sum                         = ConvNet.sumFun   (self) # summary logger 4 TensorBoard
+        self.update                      = ConvNet.updateFun(self) # Computing the update function 
         
 #===================================================================================================================================================
 
@@ -523,8 +515,8 @@ if __name__ == '__main__':
                     trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
                     trLabel = np.reshape( trLabel, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape )) 
                     
-                    trData /= 91.0
-                    trLabel /= 91.0
+                    # trData /= 91.0
+                    # trLabel /= 91.0
                    
                     sess.run(ConvNet_class.update, feed_dict={x: trData, y: trLabel, lr: alr, keepProb: dropOut, phase: True})   
                     cost = sess.run(ConvNet_class.cost, feed_dict={x: trData, y: trLabel, keepProb: 1.0, phase: True}) 
