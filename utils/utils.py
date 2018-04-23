@@ -242,22 +242,23 @@ def npy_cutter(item):
             scene           =item[:x, :y, :z] 
         elif x<=x_ and y>=y_ and z<=z_:
             scene[:, :y_, :]=item[:x, :, :z] 
-        elif x<=x_ and y<=y_ and z>=z_:
-            scene[:, :, :z_]=item[:x, :y, :] 
+        elif x<=x_ and y<=y_ and z>=z_: 
+            scene[:, :, ((z-z_)/2):(z_+(z-z_)/2)]=item[:x, :y, :] 
         elif x<=x_ and y>=y_ and z>=z_: 
-            scene[:, :y_, :z_]=item[:x, :, :]  
+            scene[:, :y_, ((z-z_)/2):(z_+(z-z_)/2)]=item[:x, :, :]  
         elif x>=x_ and y<=y_ and z<=z_:
             scene[:x_, :, :]=item[:, :y, :z] 
         elif x>=x_ and y>=y_ and z<=z_:
             scene[:x_, :y_, :]=item[:, :, :z] 
         elif x>=x_ and y<=y_ and z>=z_:
-            scene[:x_, :, :z_]=item[:, :y, :] 
+            scene[:x_, :, ((z-z_)/2):(z_+(z-z_)/2)]=item[:, :y, :] 
         elif x>=x_ and y>=y_ and z>=z_:
-            scene[:x_, :y_, :z_]=item 
+            scene[:x_, :y_, ((z-z_)/2):(z_+(z-z_)/2)]=item 
         else: 
             pass 
     except: 
         pass
+        
     return scene
 
 #====================================================================================================================
@@ -292,15 +293,15 @@ def load_time_test():
 #====================================================================================================================
 
 def scene_load_and_visualize_test():   
-    for npyFile in glob.glob('house/*.npy'):  
+    for npy_file in glob.glob('house/*.npy'):  
         tr_scene, tr_label = [], [] 
-        scene = npy_cutter(np.load(npyFile))  
+        scene = npy_cutter(np.load(npy_file))  
         tr_scene = scene[ 0:84, 0:44, 0:42  ]  # input 
         tr_label = scene[ 0:84, 0:44, 42:84 ]  # gt   
         
-        npy_to_ply(str(npyFile) + "_scene_", tr_scene)
-        npy_to_ply(str(npyFile) + "_label_", tr_scene)
-        npy_to_ply(str(npyFile) + "_self_", npy_cutter(np.load(npyFile)))
+        npy_to_ply(str(npy_file) + "_scene_", tr_scene)
+        npy_to_ply(str(npy_file) + "_label_", tr_scene)
+        npy_to_ply(str(npy_file) + "_self_", npy_cutter(np.load(npy_file)))
         break
         
 #====================================================================================================================
@@ -308,9 +309,9 @@ def scene_load_and_visualize_test():
 def show_scene_size():
     counter = 0
     all = 0
-    for npyFile in glob.glob('house/*.npy'): 
+    for npy_file in glob.glob('house/*.npy'): 
         all += 1
-        dims = np.load(npyFile).shape
+        dims = np.load(npy_file).shape
         if dims[0] < 84 or dims[1] < 44 or dims[2] < 84:
             counter += 1
             if counter % 1000 == 0:
@@ -319,8 +320,24 @@ def show_scene_size():
     
 #====================================================================================================================
 
+def npy_cutter_test():
+    for npy_file in glob.glob('house/*.npy'):
+        if np.load(npy_file).shape[2] <= 84:
+            print "file name: " , str(npy_file)
+            item = np.load(npy_file)
+            print item.shape
+            scene = npy_cutter(item) 
+            train_scene = scene[ :, : ,  0:42]
+            label_scene = scene[ :, : , 42:88]
+            npy_to_ply( str(npy_file) + "train_scene", train_scene)
+            npy_to_ply( str(npy_file) + "label_scene", label_scene)
+            npy_to_ply( str(npy_file) + "scene", scene)
+
+#====================================================================================================================
+
 if __name__ == '__main__':
     # load_time_test()
-    scene_load_and_visualize_test() 
+    # scene_load_and_visualize_test() 
     # show_scene_size()
+    npy_cutter_test()
     pass 
