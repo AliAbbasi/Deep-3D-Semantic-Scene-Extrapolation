@@ -28,73 +28,14 @@ if not os.path.exists(directory):
     
 #=====================================================================================================================================================
 
-to_train           = True
-to_restore         = True
-show_accuracy      = True
-show_accuracy_step = 500
-save_model         = False
-save_model_step    = 1000
-
-#=====================================================================================================================================================
-
-def writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2): 
-    output = open(directory + "/costs.py" , 'w') 
-    output.write( "import matplotlib.pyplot as plt" + "\r\n" )
-    output.write( "train_cost = []" + "\r\n" )
-    output.write( "valid_cost = []" + "\r\n" )
-    output.write( "steps      = []" + "\r\n" ) 
-    for i in range(len(train_cost)):
-        output.write( "steps.append("+ str(i) +")" + "\r\n" )
-    for i in range(len(train_cost)):
-        output.write( "train_cost.append("+ str(train_cost[i]) +")" + "\r\n" )
-    output.write( "\r\n \r\n \r\n" )
-    for i in range(len(valid_cost)):
-        for j in range(100):
-            output.write( "valid_cost.append("+ str(valid_cost[i]) +")" + "\r\n" )   
-    output.write( "plt.plot( steps , train_cost, color ='b', lw=3 )   " + "\r\n" )
-    output.write( "plt.plot( steps , valid_cost, color ='g', lw=3 )   " + "\r\n" )
-    output.write( "plt.xlabel('Steps', fontsize=14)                   " + "\r\n" )
-    output.write( "plt.ylabel('Cost',  fontsize=14)                   " + "\r\n" )
-    output.write( "plt.suptitle('Blue: Train Cost, Green: Valid Cost')" + "\r\n" )
-    output.write( "plt.show()                                         " + "\r\n" ) 
-    logging.info("costs.py file is created!")
-    print ("costs.py file is created!")
-    
-    #-----------------------------------------------------------------------------
-    
-    output = open(directory + "/accuracy.py" , 'w') 
-    output.write( "import matplotlib.pyplot as plt" + "\r\n" )
-    output.write( "train_accu1 = []" + "\r\n" )
-    output.write( "train_accu2 = []" + "\r\n" )
-    output.write( "valid_accu1 = []" + "\r\n" )
-    output.write( "valid_accu2 = []" + "\r\n" )
-    output.write( "steps      = []" + "\r\n" ) 
-    for i in range(len(train_accu1)):
-        output.write( "steps.append("+ str(i) +")" + "\r\n" )
-    output.write( "\r\n \r\n \r\n" )
-    for i in range(len(train_accu1)):
-        output.write( "train_accu1.append("+ str(train_accu1[i]) +")" + "\r\n" )
-    output.write( "\r\n \r\n \r\n" )
-    for i in range(len(train_accu2)):
-        output.write( "train_accu2.append("+ str(train_accu2[i]) +")" + "\r\n" )       
-    output.write( "\r\n \r\n \r\n" )
-    for i in range(len(valid_accu1)):
-        for j in range(100):
-            output.write( "valid_accu1.append("+ str(valid_accu1[i]) +")" + "\r\n" )   
-    output.write( "\r\n \r\n \r\n" )
-    for i in range(len(valid_accu2)):
-        for j in range(100):
-            output.write( "valid_accu2.append("+ str(valid_accu2[i]) +")" + "\r\n" ) 
-    output.write( "plt.plot( steps , train_accu1, color ='b', lw=3 )   " + "\r\n" )
-    output.write( "plt.plot( steps , train_accu2, color ='b', lw=1 )   " + "\r\n" )
-    output.write( "plt.plot( steps , valid_accu1, color ='g', lw=3 )   " + "\r\n" )
-    output.write( "plt.plot( steps , valid_accu2, color ='g', lw=1 )   " + "\r\n" )
-    output.write( "plt.xlabel('Steps', fontsize=14)                   " + "\r\n" )
-    output.write( "plt.ylabel('Accuracy',  fontsize=14)               " + "\r\n" )
-    output.write( "plt.suptitle('Blue: Train Accu, Green: Valid Accu')" + "\r\n" )
-    output.write( "plt.show()                                         " + "\r\n" ) 
-    logging.info("accuracy.py file is created!")
-    print ("accuracy.py file is created!")
+to_train             = True
+to_restore           = True
+show_accuracy        = True
+show_accuracy_step   = 500
+save_model           = False
+save_model_step      = 1000
+visualize_scene      = True
+visualize_scene_step = 1000
 
 #=====================================================================================================================================================
 
@@ -232,99 +173,12 @@ class ConvNet( object ):
         self.cost                        = ConvNet.costFun  (self) # Computing the cost function 
         self.update                      = ConvNet.updateFun(self) # Computing the update function 
         
-#===================================================================================================================================================
+#=================================================================================================================================================== 
 
-def backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) :
-    logging.info("Saving the model...") 
-    print       ("Saving the model...") 
-    saver.save(sess, directory + '/my-model')    
-    writeCostNaccu(train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2)    
-    
-    return  # TODO 
-    
-    # Visualize Validation Set 
-    logging.info("Creating ply files...") 
-    print       ("Creating ply files...") 
-    
-    flag    = 0
-    files   = ''
-    npy     = '*.npy'
-    npytest = '*.npytest'
-    
-    while(True):
-        counter = 0
-        
-        if flag == 0:
-            files = npytest
-        else:
-            files = npy
-            flag  = 1
-            
-        for test in glob.glob(files): 
-            scene = np.load(test)  
-            trData, trLabel = [], [] 
-            
-            scene = np.load(test) 
-
-            trData  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0 : halfed_scene_shape              ]  # input 
-            trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape : scene_shape[2] ]  # gt     
-            
-            trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
-            score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
-            score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
-            score   = np.argmax ( score, 3)     
-            score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
-            score   = score[0:scene_shape[0], 0:scene_shape[1], 1:halfed_scene_shape]            
-            trData  = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
-            
-            scn     = np.concatenate(( trData , score ), axis=2 )
-            
-            output    = open( directory + "/" + test + ".ply", 'w') 
-            ply       = ""
-            numOfVrtc = 0
-            for idx1 in range(scene_shape[0]):
-                for idx2 in range(scene_shape[1]): 
-                    for idx3 in range(scene_shape[2] - 1): 
-                        if scn[idx1][idx2][idx3] > 0:  
-                            ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(colors[ int(scn[idx1][idx2][idx3]) ]) + "\n" 
-                            numOfVrtc += 1
-                            
-            output.write("ply"                                   + "\n")
-            output.write("format ascii 1.0"                      + "\n")
-            output.write("comment VCGLIB generated"              + "\n")
-            output.write("element vertex " +  str(numOfVrtc)     + "\n")
-            output.write("property float x"                      + "\n")
-            output.write("property float y"                      + "\n")
-            output.write("property float z"                      + "\n")
-            output.write("property uchar red"                    + "\n")
-            output.write("property uchar green"                  + "\n")
-            output.write("property uchar blue"                   + "\n")
-            output.write("property uchar alpha"                  + "\n")
-            output.write("element face 0"                        + "\n")
-            output.write("property list uchar int vertex_indices"+ "\n")
-            output.write("end_header"                            + "\n")
-            output.write( ply                                          ) 
-            output.close()
-            logging.info(test + ".ply" + " is Done!") 
-            print (test + ".ply" + " is Done!") 
-            counter += 1
-            
-            if counter == 8:
-                if flag == 1:
-                    logging.info(".ply files are done!")
-                    print (".ply files are done!")
-                    return
-                else:
-                    flag = 1
-                    break
-                    
-#===================================================================================================================================================
-
-def show_result(sess):
-
+def show_result(sess): 
     # Visualize Validation Set
     logging.info("Creating ply files...")
-    print ("Creating ply files...")
+    print       ("Creating ply files...")
     
     bs = 0  
     trData, trLabel = [], [] 
@@ -437,8 +291,7 @@ def accuFun(sess, trData, trLabel, batch_size):
 if __name__ == '__main__':
 
     input         = scene_shape[0] * scene_shape[1] * halfed_scene_shape
-    out           = scene_shape[0] * scene_shape[1] * halfed_scene_shape 
-    logPath       = '/tmp/' + directory
+    out           = scene_shape[0] * scene_shape[1] * halfed_scene_shape  
     x             = tf.placeholder(tf.float32, [ None, input ])
     y             = tf.placeholder(tf.int32  , [ None, out   ])   
     lr            = tf.placeholder(tf.float32                 )   
@@ -452,16 +305,13 @@ if __name__ == '__main__':
     saver         = tf.train.Saver()
     
     # prevent to add extra node to graph during training
-    # if to_train and not to_restore:
-        # tf.get_default_graph().finalize()
+    if to_train and not to_restore:
+        tf.get_default_graph().finalize()
         
     # log_device_placement: shows the log of which task will work on which device.
     # allow_soft_placement: TF choose automatically the available device
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:  
-        sess.run(init_var)
-        
-        if os.path.exists(logPath):
-            shutil.rmtree(logPath) 
+        sess.run(init_var) 
         
         # restore model weights
         if to_restore:
@@ -481,15 +331,15 @@ if __name__ == '__main__':
         # -------------- train phase --------------
         step         = 0
         counter      = 0
-        epoch        = 1 
+        epoch        = 1
         alr          = 0.00001
         train_cost   = []
         valid_cost   = []
         train_accu1  = []
         train_accu2  = []
-        valid_accu1  = [] 
-        valid_accu2  = [] 
-        batch        = []  
+        valid_accu1  = []
+        valid_accu2  = []
+        batch        = []
         
         accu1tr, accu2tr = 0, 0
         
@@ -523,15 +373,23 @@ if __name__ == '__main__':
                         logging.info("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
                         print       ("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
                     # -------------- accuracy calculator --------------  
-                    if step%show_accuracy_step == 0 and show_accuracy:   
+                    if step % show_accuracy_step == 0 and show_accuracy:   
                         accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size)  
                         train_accu1.append(accu1tr)
                         train_accu2.append(accu2tr)
                         
                     # -------------- save mode, write cost and accuracy --------------  
-                    if step%save_model_step == 0 and save_model: 
-                        backup(sess, saver, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2)  
+                    if step % save_model_step == 0 and save_model: 
+                        logging.info("Saving the model...") 
+                        print       ("Saving the model...") 
+                        saver.save(sess, directory + '/my-model')
+                        utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
+                        
+                    # -------------- visualize scens -------------- 
+                    if step % visualize_scene_step == 0 and visualize_scene:
+                        show_result(sess)
                     
+                    # ------------------------------------------
                     step += 1  
                     batch = []    
                     
@@ -547,6 +405,4 @@ if __name__ == '__main__':
         logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
         print       (" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
         
-#========================================================================================================================================================
- 
-
+#======================================================================================================================================================== 
