@@ -29,7 +29,7 @@ if not os.path.exists(directory):
 #=====================================================================================================================================================
 
 to_train           = True
-to_restore         = False
+to_restore         = True
 show_accuracy      = True
 show_accuracy_step = 500
 save_model         = False
@@ -452,8 +452,9 @@ if __name__ == '__main__':
     saver         = tf.train.Saver()
     
     # prevent to add extra node to graph during training
-    if to_train:
-        tf.get_default_graph().finalize()
+    # if to_train and not to_restore:
+        # tf.get_default_graph().finalize()
+        
     # log_device_placement: shows the log of which task will work on which device.
     # allow_soft_placement: TF choose automatically the available device
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:  
@@ -493,10 +494,6 @@ if __name__ == '__main__':
         accu1tr, accu2tr = 0, 0
         
         while(epoch < maxEpoch):    
-            saver.save(sess, directory + '/my-model') 
-            logging.info("\r\n Model saved! \r\n") 
-            print ("\r\n Model saved! \r\n") 
-            
             for npyFile in glob.glob('house/*.npy'): 
                 trData, trLabel = [], [] 
                 
@@ -538,10 +535,15 @@ if __name__ == '__main__':
                     step += 1  
                     batch = []    
                     
-            # END for binFile in glob 
+            # END for binFile in glob  
+            saver.save(sess, directory + '/my-model') 
+            logging.info("\r\n Model saved! \r\n") 
+            print       ("\r\n Model saved! \r\n") 
+            
             epoch += 1     
             logging.info(" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
             print       (" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
+            
         logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
         print       (" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
         
