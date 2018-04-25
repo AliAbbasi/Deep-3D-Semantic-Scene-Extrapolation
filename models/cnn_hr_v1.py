@@ -28,14 +28,14 @@ if not os.path.exists(directory):
     
 #=====================================================================================================================================================
 
-to_train             = True
+to_train             = False
 to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = False
 save_model_step      = 1000
 visualize_scene      = True
-visualize_scene_step = 1000
+visualize_scene_step = 5000
 
 #=====================================================================================================================================================
 
@@ -172,83 +172,9 @@ class ConvNet( object ):
         self.score                       = ConvNet.scoreFun (self) # Computing the score function     
         self.cost                        = ConvNet.costFun  (self) # Computing the cost function 
         self.update                      = ConvNet.updateFun(self) # Computing the update function 
-        
+     
 #=================================================================================================================================================== 
 
-def show_result(sess): 
-    # Visualize Validation Set
-    logging.info("Creating ply files...")
-    print       ("Creating ply files...")
-    
-    bs = 0  
-    trData, trLabel = [], [] 
-    batch_arr = []
-    for test in glob.glob('test/*.npy'):  
-        loaded_file = np.load(test)
-        batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
-        bs += 1 
-        
-    batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
-    trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-    trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt     
-    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))  
-    score   = sess.run(ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
-    accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
-    logging.info("A1: %g, A2: %g" % (accu1, accu2))
-    print       ("A1: %g, A2: %g" % (accu1, accu2))
-    
-    for test in glob.glob('test/*.npy'): 
-        loaded_file = np.load(test)
-        scene = utils.npy_cutter(loaded_file, scene_shape)
-        trData, trLabel = [], []   
-
-        trData  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
-        trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
-        
-        trData  = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
-        score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
-        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
-        score   = np.argmax ( score, 3)     
-        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
-        score   = score[0:scene_shape[0], 0:scene_shape[1], 1:halfed_scene_shape]            
-        trData  = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
-        
-        scn = np.concatenate(( trData, score ), axis=2 ) 
-        
-        output = open( directory + "/" + test[5:] + ".ply" , 'w') 
-        ply       = ""
-        numOfVrtc = 0
-        for idx1 in range(scene_shape[0]):
-            for idx2 in range(scene_shape[1]): 
-                for idx3 in range(scene_shape[2] - 1):  
-                    if scn[idx1][idx2][idx3] > 0:  
-                        ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(utils.colors[ int(scn[idx1][idx2][idx3]) ]) + "\n" 
-                        numOfVrtc += 1
-                        
-        output.write("ply"                                   + "\n")
-        output.write("format ascii 1.0"                      + "\n")
-        output.write("comment VCGLIB generated"              + "\n")
-        output.write("element vertex " +  str(numOfVrtc)     + "\n")
-        output.write("property float x"                      + "\n")
-        output.write("property float y"                      + "\n")
-        output.write("property float z"                      + "\n")
-        output.write("property uchar red"                    + "\n")
-        output.write("property uchar green"                  + "\n")
-        output.write("property uchar blue"                   + "\n")
-        output.write("property uchar alpha"                  + "\n")
-        output.write("element face 0"                        + "\n")
-        output.write("property list uchar int vertex_indices"+ "\n")
-        output.write("end_header"                            + "\n")
-        output.write( ply                                          ) 
-        output.close()
-        logging.info(test + ".ply" + " is Done!")
-        print       (test + ".ply" + " is Done!") 
-    
-    logging.info("A1: %g, A2: %g" % (accu1, accu2))    
-    print       ("A1: %g, A2: %g" % (accu1, accu2))   
-    
-#===================================================================================================================================================
-  
 def accuFun(sess, trData, trLabel, batch_size):
 
     score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
@@ -288,6 +214,84 @@ def accuFun(sess, trData, trLabel, batch_size):
 
 #=================================================================================================================================================== 
 
+def show_result(sess): 
+    # Visualize Validation Set
+    logging.info("Creating ply files...")
+    print       ("Creating ply files...")
+    
+    bs = 0  
+    trData, trLabel = [], [] 
+    batch_arr = []
+    for test in glob.glob('test/*.npy'):  
+        loaded_file = np.load(test)
+        batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
+        bs += 1 
+        
+    batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
+    trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+    trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt     
+    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))  
+    score   = sess.run(ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
+    accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
+    logging.info("A1: %g, A2: %g" % (accu1, accu2))
+    print       ("A1: %g, A2: %g" % (accu1, accu2))
+    
+    for test in glob.glob('test/*.npy'): 
+        loaded_file = np.load(test)
+        scene = utils.npy_cutter(loaded_file, scene_shape)
+        trData, trLabel = [], []   
+
+        trData  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
+        trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
+        
+        trData  = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
+        score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
+        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
+        score   = np.argmax ( score, 3)     
+        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
+        score   = score[0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape]            
+        trData  = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
+        
+        gen_scn = np.concatenate((trData, score), axis=2) 
+        
+        empty_space = np.zeros((10, 44, 84))
+        gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
+        gen_scn = np.concatenate((gen_scn, scene), axis=0)
+        
+        output = open( directory + "/" + test[5:] + ".ply" , 'w') 
+        ply       = ""
+        numOfVrtc = 0
+        for idx1 in range(gen_scn.shape[0]):
+            for idx2 in range(gen_scn.shape[1]): 
+                for idx3 in range(gen_scn.shape[2]):  
+                    if gen_scn[idx1][idx2][idx3] > 0:  
+                        ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(utils.colors[ int(gen_scn[idx1][idx2][idx3]) ]) + "\n" 
+                        numOfVrtc += 1
+                        
+        output.write("ply"                                   + "\n")
+        output.write("format ascii 1.0"                      + "\n")
+        output.write("comment VCGLIB generated"              + "\n")
+        output.write("element vertex " +  str(numOfVrtc)     + "\n")
+        output.write("property float x"                      + "\n")
+        output.write("property float y"                      + "\n")
+        output.write("property float z"                      + "\n")
+        output.write("property uchar red"                    + "\n")
+        output.write("property uchar green"                  + "\n")
+        output.write("property uchar blue"                   + "\n")
+        output.write("property uchar alpha"                  + "\n")
+        output.write("element face 0"                        + "\n")
+        output.write("property list uchar int vertex_indices"+ "\n")
+        output.write("end_header"                            + "\n")
+        output.write( ply                                          ) 
+        output.close()
+        logging.info(test + ".ply" + " is Done!")
+        print       (test + ".ply" + " is Done!") 
+    
+    logging.info("A1: %g, A2: %g" % (accu1, accu2))    
+    print       ("A1: %g, A2: %g" % (accu1, accu2))   
+    
+#===================================================================================================================================================
+  
 if __name__ == '__main__':
 
     input         = scene_shape[0] * scene_shape[1] * halfed_scene_shape
