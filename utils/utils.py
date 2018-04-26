@@ -54,8 +54,7 @@ def write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, trai
     output.write( "plt.xlabel('Steps', fontsize=14)                   " + "\r\n" )
     output.write( "plt.ylabel('Cost',  fontsize=14)                   " + "\r\n" )
     output.write( "plt.suptitle('Blue: Train Cost, Green: Valid Cost')" + "\r\n" )
-    output.write( "plt.show()                                         " + "\r\n" ) 
-    logging.info("costs.py file is created!")
+    output.write( "plt.show()                                         " + "\r\n" )  
     print ("costs.py file is created!")
     
     #-----------------------------------------------------------------------------
@@ -90,8 +89,7 @@ def write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, trai
     output.write( "plt.xlabel('Steps', fontsize=14)                   " + "\r\n" )
     output.write( "plt.ylabel('Accuracy',  fontsize=14)               " + "\r\n" )
     output.write( "plt.suptitle('Blue: Train Accu, Green: Valid Accu')" + "\r\n" )
-    output.write( "plt.show()                                         " + "\r\n" ) 
-    logging.info("accuracy.py file is created!")
+    output.write( "plt.show()                                         " + "\r\n" )  
     print ("accuracy.py file is created!")  
     
 #====================================================================================================================
