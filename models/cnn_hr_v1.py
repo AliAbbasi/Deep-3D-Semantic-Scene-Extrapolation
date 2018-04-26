@@ -421,6 +421,8 @@ if __name__ == '__main__':
                         # check for training on subset of trainset
                         if subset_train:
                             if subset_train_limit >= step:
+                                step  = 1  
+                                batch = [] 
                                 break
                     
                     # ---------------------------------------------
