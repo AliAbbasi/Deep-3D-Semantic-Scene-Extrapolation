@@ -3,6 +3,7 @@
 
 # 91 category of objects    
 # scene size: 84 x 44 x 84     
+# focal loss
 
 #====================================================================================================================================================
 
@@ -28,11 +29,12 @@ if not os.path.exists(directory):
     
 #=====================================================================================================================================================
 
+# Config
 to_train             = True
-to_restore           = True
+to_restore           = False
 show_accuracy        = True
 show_accuracy_step   = 500
-save_model           = False
+save_model           = True
 save_model_step      = 1000
 visualize_scene      = True
 visualize_scene_step = 5000
@@ -135,12 +137,31 @@ class ConvNet( object ):
         
     #---------------------------------------------------------------------------------------------------------------------------------------------------
 
-    def costFun(self):  
-    
+    def costFun(self): 
+        
+        def focal_loss(labels, logits, gamma=2.0, alpha=4.0): 
+            epsilon = 1.e-9
+            labels = tf.to_int64(labels)
+            labels = tf.convert_to_tensor(labels, tf.int64)
+            logits = tf.convert_to_tensor(logits, tf.float32)
+            num_cls = logits.shape[1]
+
+            model_out = tf.add(logits, epsilon)
+            onehot_labels = tf.one_hot(labels, num_cls)
+            ce = tf.multiply(onehot_labels, -tf.log(model_out))
+            weight = tf.multiply(onehot_labels, tf.pow(tf.subtract(1., model_out), gamma))
+            fl = tf.multiply(alpha, tf.multiply(weight, ce))
+            reduced_fl = tf.reduce_max(fl, axis=1) 
+            return reduced_fl
+        
+        #----------------------------------------------------------------
+        
         logits = tf.reshape(self.score, [-1, classes_count])
         labels = tf.reshape(self.y,     [-1               ]) 
         
-        total = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits( logits=logits, labels=labels ))
+        total = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+        total += tf.reduce_mean(focal_loss(labels[ 0:16], tf.nn.softmax(logits[ 0:16, :]))) # TODO; pass the batch_size into training and slice with that
+        total += tf.reduce_mean(focal_loss(labels[16:32], tf.nn.softmax(logits[16:32, :])))
         
         for w in self.params_w_:
             total += tf.nn.l2_loss(self.params_w_[w]) * 0.005 
@@ -163,7 +184,7 @@ class ConvNet( object ):
         
    #--------------------------------------------------------------------------------------------------------------------------------------------------
 
-    def __init__(self,x,y,lr,keepProb,phase):                    
+    def __init__(self, x, y, lr, keepProb, phase):                    
         self.x_        = x
         self.y         = y
         self.lr        = lr 
@@ -335,7 +356,7 @@ if __name__ == '__main__':
             sys.exit(0)
         
         # -------------- train phase --------------
-        step         = 0
+        step         = 1
         counter      = 0
         epoch        = 1
         alr          = 0.00001
@@ -389,6 +410,8 @@ if __name__ == '__main__':
                         logging.info("Saving the model...") 
                         print       ("Saving the model...") 
                         saver.save(sess, directory + '/my-model')
+                        logging.info("creating cost and accuray plot files...") 
+                        print       ("creating cost and accuray plot files...")
                         utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
                         
                     # -------------- visualize scens -------------- 
