@@ -28,7 +28,7 @@ if not os.path.exists(directory):
     
 #=====================================================================================================================================================
 
-to_train             = False
+to_train             = True
 to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
@@ -36,6 +36,8 @@ save_model           = False
 save_model_step      = 1000
 visualize_scene      = True
 visualize_scene_step = 5000
+subset_train         = True
+subset_train_limit   = 75000 
 
 #=====================================================================================================================================================
 
@@ -138,7 +140,7 @@ class ConvNet( object ):
         logits = tf.reshape(self.score, [-1, classes_count])
         labels = tf.reshape(self.y,     [-1               ]) 
         
-        total  = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits( logits=logits, labels=labels ))
+        total = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits( logits=logits, labels=labels ))
         
         for w in self.params_w_:
             total += tf.nn.l2_loss(self.params_w_[w]) * 0.005 
@@ -392,8 +394,13 @@ if __name__ == '__main__':
                     # -------------- visualize scens -------------- 
                     if step % visualize_scene_step == 0 and visualize_scene:
                         show_result(sess)
+                        
+                        # check for training on subset of trainset
+                        if subset_train:
+                            if subset_train_limit >= step:
+                                break
                     
-                    # ------------------------------------------
+                    # ---------------------------------------------
                     step += 1  
                     batch = []    
                     
