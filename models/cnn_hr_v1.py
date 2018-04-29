@@ -4,6 +4,7 @@
 # 91 category of objects    
 # scene size: 84 x 44 x 84     
 # focal loss
+# BN layer after each merge
 
 #====================================================================================================================================================
 
@@ -38,8 +39,7 @@ save_model           = True
 save_model_step      = 1000
 visualize_scene      = True
 visualize_scene_step = 5000
-subset_train         = True
-subset_train_limit   = 75000 
+subset_train         = True 
 
 #=====================================================================================================================================================
 
@@ -107,6 +107,7 @@ class ConvNet( object ):
         conv_r1_4 =             conv2d( conv_r1_3, self.params_w_['w4'], self.params_b_['b4'], "conv_r1_4" ) 
 
         merge_1   = tf.add_n([conv_1, conv_r1_4])
+        merge_1   = tf.layers.batch_normalization(merge_1)
         
         # Residual Block #2
         conv_r2_1 = tf.nn.relu( merge_1 )  
@@ -114,7 +115,8 @@ class ConvNet( object ):
         conv_r2_3 = tf.nn.relu( conv2d( conv_r2_2, self.params_w_['w6'], self.params_b_['b6'], "conv_r2_3" ) ) 
         conv_r2_4 =             conv2d( conv_r2_3, self.params_w_['w7'], self.params_b_['b7'], "conv_r2_4" ) 
         
-        merge_2   = tf.add_n([merge_1, conv_r2_4])  
+        merge_2   = tf.add_n([merge_1, conv_r2_4]) 
+        merge_2   = tf.layers.batch_normalization(merge_2)
         
         # Residual Block #3
         conv_r3_1 = tf.nn.relu( merge_2 )  
@@ -123,6 +125,7 @@ class ConvNet( object ):
         conv_r3_4 =             conv2d( conv_r3_3, self.params_w_['w10'], self.params_b_['b10'], "conv_r3_4" )  
         
         merge_3   = tf.nn.relu( tf.add_n([merge_2, conv_r3_4]) ) 
+        merge_3   = tf.layers.batch_normalization(merge_3)
         
         # Residual Block #4
         conv_2    = tf.nn.relu( conv2d( merge_3, self.params_w_['w11'], self.params_b_['b11'], "conv_2" ) )  
@@ -348,6 +351,8 @@ if __name__ == '__main__':
                 logging.info("\r\n------------ Saved weights restored. ------------")
                 print       ("\r\n------------ Saved weights restored. ------------")
                 
+        extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)     
+        
         # -------------- test phase --------------
         if to_train == False:  
             show_result(sess) 
@@ -387,14 +392,11 @@ if __name__ == '__main__':
                     trLabel = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt  
 
                     trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
-                    trLabel = np.reshape( trLabel, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape )) 
+                    trLabel = np.reshape( trLabel, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
                     
-                    # trData /= 91.0
-                    # trLabel /= 91.0
-                   
-                    sess.run(ConvNet_class.update, feed_dict={x: trData, y: trLabel, lr: alr, keepProb: dropOut, phase: True})   
-                    cost = sess.run(ConvNet_class.cost, feed_dict={x: trData, y: trLabel, keepProb: 1.0, phase: True}) 
-                    train_cost.append(cost)
+                    with tf.control_dependencies(extra_update_ops):  
+                        cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: trData, y: trLabel, lr: alr, keepProb: dropOut, phase: True})    
+                        train_cost.append(cost)
 
                     if step%1 == 0: 
                         logging.info("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
@@ -414,16 +416,15 @@ if __name__ == '__main__':
                         print       ("creating cost and accuray plot files...")
                         utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
                         
-                    # -------------- visualize scens -------------- 
+                    # -------------- visualize scenes -------------- 
                     if step % visualize_scene_step == 0 and visualize_scene:
                         show_result(sess)
                         
-                        # check for training on subset of trainset
-                        if subset_train:
-                            if subset_train_limit >= step:
-                                step  = 1  
-                                batch = [] 
-                                break
+                        # check for training on subset 
+                        if subset_train: 
+                            batch = [] 
+                            step = 1
+                            break
                     
                     # ---------------------------------------------
                     step += 1  
