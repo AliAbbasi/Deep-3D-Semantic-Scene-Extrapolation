@@ -8,7 +8,7 @@
 
 #====================================================================================================================================================
 
-import sys, glob, datetime, random, os, os.path, shutil, logging
+import sys, glob, datetime, time, random, os, os.path, shutil, logging
 import numpy            as     np
 from   random           import randint
 from   numpy            import array 
@@ -30,15 +30,14 @@ if not os.path.exists(directory):
     
 #=====================================================================================================================================================
 
-# Config
 to_train             = True
-to_restore           = False
+to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
 save_model_step      = 1000
 visualize_scene      = True
-visualize_scene_step = 5000
+visualize_scene_step = 3000
 subset_train         = True 
 
 #=====================================================================================================================================================
@@ -329,15 +328,11 @@ if __name__ == '__main__':
     phase         = tf.placeholder(tf.bool                    )
     dropOut       = 0.5
     batch_size    = 32
-    maxEpoch      = 50
+    max_epoch     = 500
     ConvNet_class = ConvNet(x, y, lr, keepProb, phase)
     init_var      = tf.global_variables_initializer() 
-    saver         = tf.train.Saver()
+    saver         = tf.train.Saver() 
     
-    # prevent to add extra node to graph during training
-    if to_train and not to_restore:
-        tf.get_default_graph().finalize()
-        
     # log_device_placement: shows the log of which task will work on which device.
     # allow_soft_placement: TF choose automatically the available device
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:  
@@ -351,6 +346,10 @@ if __name__ == '__main__':
                 logging.info("\r\n------------ Saved weights restored. ------------")
                 print       ("\r\n------------ Saved weights restored. ------------")
                 
+        # prevent to add extra node to graph during training        
+        tf.get_default_graph().finalize()        
+        
+        # get the updateable operation from graph for batch norm layer
         extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)     
         
         # -------------- test phase --------------
@@ -375,7 +374,8 @@ if __name__ == '__main__':
         
         accu1tr, accu2tr = 0, 0
         
-        while(epoch < maxEpoch):    
+        while(epoch < max_epoch):    
+            time_fetch_batch = time.time()
             for npyFile in glob.glob('house/*.npy'): 
                 trData, trLabel = [], [] 
                 
@@ -385,6 +385,10 @@ if __name__ == '__main__':
                     batch.append(scene)
                     counter += 1   
                 else: 
+                    print        ("fetch time: " + str(time.time() - time_fetch_batch))
+                    logging.info ("fetch time: " + str(time.time() - time_fetch_batch))
+                    time_train = time.time()
+                    
                     counter = 0  
                     batch = np.reshape( batch, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))   
                 
@@ -397,7 +401,12 @@ if __name__ == '__main__':
                     with tf.control_dependencies(extra_update_ops):  
                         cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: trData, y: trLabel, lr: alr, keepProb: dropOut, phase: True})    
                         train_cost.append(cost)
-
+                    
+                    print        ("train time: " + str(time.time() - time_train))
+                    logging.info ("train time: " + str(time.time() - time_train))
+                    
+                    time_fetch_batch = time.time()
+                    
                     if step%1 == 0: 
                         logging.info("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
                         print       ("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
@@ -405,7 +414,7 @@ if __name__ == '__main__':
                     if step % show_accuracy_step == 0 and show_accuracy:   
                         accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size)  
                         train_accu1.append(accu1tr)
-                        train_accu2.append(accu2tr)
+                        train_accu2.append(accu2tr) 
                         
                     # -------------- save mode, write cost and accuracy --------------  
                     if step % save_model_step == 0 and save_model: 
@@ -430,10 +439,11 @@ if __name__ == '__main__':
                     step += 1  
                     batch = []    
                     
-            # END for binFile in glob  
-            saver.save(sess, directory + '/my-model') 
-            logging.info("\r\n Model saved! \r\n") 
-            print       ("\r\n Model saved! \r\n") 
+            # END for binFile in glob 
+            if save_model:
+                saver.save(sess, directory + '/my-model') 
+                logging.info("\r\n Model saved! \r\n") 
+                print       ("\r\n Model saved! \r\n") 
             
             epoch += 1     
             logging.info(" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
