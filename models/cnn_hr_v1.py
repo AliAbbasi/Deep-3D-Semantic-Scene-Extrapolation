@@ -19,19 +19,12 @@ import utils # TODO fix it later
 
 #====================================================================================================================================================
 
-classes_count = 91
-scene_shape = [84, 44, 84]
-halfed_scene_shape = scene_shape[2] / 2
-
-logging.basicConfig(filename='cnn_hr_v1.log',level=logging.DEBUG)
-directory  = 'cnn_hr_v1'
-if not os.path.exists(directory):
-    os.makedirs(directory) 
-    
-#=====================================================================================================================================================
-
+classes_count        = 14
+scene_shape          = [84, 44, 84]
+halfed_scene_shape   = scene_shape[2] / 2 
+directory            = 'cnn_hr_v1'
 to_train             = True
-to_restore           = True
+to_restore           = False
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -39,10 +32,17 @@ save_model_step      = 1000
 visualize_scene      = True
 visualize_scene_step = 3000
 subset_train         = True 
+data_directory       = 'house_2/' 
+test_directory       = 'test/'
 
+logging.basicConfig(filename=str(directory)+'.log', level=logging.DEBUG) 
+
+if not os.path.exists(directory):
+    os.makedirs(directory)
+    
 #=====================================================================================================================================================
 
-class ConvNet( object ):
+class ConvNet(object):
 
     def paramsFun(self): 
         params_w = {
@@ -247,7 +247,7 @@ def show_result(sess):
     bs = 0  
     trData, trLabel = [], [] 
     batch_arr = []
-    for test in glob.glob('test/*.npy'):  
+    for test in glob.glob(test_directory+'*.npy'):  
         loaded_file = np.load(test)
         batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
         bs += 1 
@@ -261,7 +261,7 @@ def show_result(sess):
     logging.info("A1: %g, A2: %g" % (accu1, accu2))
     print       ("A1: %g, A2: %g" % (accu1, accu2))
     
-    for test in glob.glob('test/*.npy'): 
+    for test in glob.glob(test_directory+'*.npy'): 
         loaded_file = np.load(test)
         scene = utils.npy_cutter(loaded_file, scene_shape)
         trData, trLabel = [], []   
@@ -376,7 +376,7 @@ if __name__ == '__main__':
         
         while(epoch < max_epoch):    
             time_fetch_batch = time.time()
-            for npyFile in glob.glob('house/*.npy'): 
+            for npyFile in glob.glob(data_directory + '*.npy'): 
                 trData, trLabel = [], [] 
                 
                 if counter < batch_size:  
