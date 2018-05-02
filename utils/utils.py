@@ -49,8 +49,8 @@ def write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, trai
     for i in range(len(valid_cost)):
         for j in range(100):
             output.write( "valid_cost.append("+ str(valid_cost[i]) +")" + "\r\n" )   
-    output.write( "plt.plot( steps , train_cost, color ='b', lw=3 )   " + "\r\n" )
-    output.write( "plt.plot( steps , valid_cost, color ='g', lw=3 )   " + "\r\n" )
+    output.write( "plt.plot( steps , train_cost, color ='b', lw=1 )   " + "\r\n" )
+    output.write( "plt.plot( steps , valid_cost, color ='g', lw=1 )   " + "\r\n" )
     output.write( "plt.xlabel('Steps', fontsize=14)                   " + "\r\n" )
     output.write( "plt.ylabel('Cost',  fontsize=14)                   " + "\r\n" )
     output.write( "plt.suptitle('Blue: Train Cost, Green: Valid Cost')" + "\r\n" )
@@ -124,6 +124,100 @@ def npy_to_ply(name, input_npy_file):  # the input is a npy file
     output.write(ply)
     output.close()
     print (str(name) + ".ply is Done.!")
+    
+    """ 91 classes
+    1 empty 
+    2 wall 
+    3 ceiling 
+    4 floor 
+    5 unknown 
+    6 hanger 
+    7 kitchen_cabinet 
+    8 kitchen_appliance 
+    9 desk 
+    10 chair 
+    11 table 
+    12 television 
+    13 tv_stand 
+    14 computer 
+    15 wardrobe_cabinet 
+    16 door 
+    17 indoor_lamp 
+    18 window 
+    19 stand 
+    20 dresser 
+    21 plant 
+    22 sink 
+    23 table_and_chair 
+    24 shower 
+    25 toy 
+    26 dressing_table 
+    27 music 
+    28 mirror 
+    29 shoes_cabinet 
+    30 books 
+    31 kitchenware 
+    32 toilet 
+    33 stairs 
+    34 rug 
+    35 sofa 
+    36 recreation 
+    37 shelving 
+    38 bed 
+    39 household_appliance 
+    40 air_conditioner 
+    41 fan 
+    42 bathroom_stuff 
+    43 heater 
+    44 picture_frame 
+    45 fireplace 
+    46 hanging_kitchen_cabinet 
+    47 vase 
+    48 curtain 
+    49 switch 
+    50 clock 
+    51 trash_can 
+    52 person 
+    53 partition 
+    54 gym_equipment 
+    55 headstone 
+    56 coffin 
+    57 garage_door 
+    58 decoration 
+    59 vehicle 
+    60 column 
+    61 fence 
+    62 outdoor_lamp 
+    63 outdoor_seating 
+    64 grill 
+    65 bathtub 
+    66 bench_chair 
+    67 ottoman 
+    68 workplace 
+    69 whiteboard 
+    70 candle 
+    71 pool 
+    72 ATM 
+    73 pet 
+    74 outdoor_cover 
+    75 arch 
+    76 roof 
+    77 kitchen_set 
+    78 wood_board 
+    79 pillow 
+    80 magazines 
+    81 tripod 
+    82 shoes 
+    83 trinket 
+    84 outdoor_spring 
+    85 cloth 
+    86 drinkbar 
+    87 cart 
+    88 safe 
+    89 mailbox 
+    90 storage_bench 
+    91 stand
+    """
 
 #====================================================================================================================
 
@@ -230,9 +324,14 @@ def npy_cutter_test():
 
 #====================================================================================================================
 
+def reduce_classes_to_13():
+    pass
+
+#====================================================================================================================
+
 if __name__ == '__main__':
     # load_time_test()
     # scene_load_and_visualize_test() 
     # show_scene_size()
-    npy_cutter_test()
+    # npy_cutter_test()
     pass 
