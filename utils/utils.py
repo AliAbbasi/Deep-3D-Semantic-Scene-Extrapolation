@@ -3,6 +3,7 @@
 
 import numpy as np
 import glob
+from multiprocessing import Pool
 
 #====================================================================================================================
 
@@ -123,100 +124,99 @@ def npy_to_ply(name, input_npy_file):  # the input is a npy file
     output.write("end_header" + "\n")
     output.write(ply)
     output.close()
-    print (str(name) + ".ply is Done.!")
+    print (str(name) + ".ply is Done.!") 
     
-    """ 91 classes
-    1 empty 
-    2 wall 
-    3 ceiling 
-    4 floor 
-    5 unknown 
-    6 hanger 
-    7 kitchen_cabinet 
-    8 kitchen_appliance 
-    9 desk 
-    10 chair 
-    11 table 
-    12 television 
-    13 tv_stand 
-    14 computer 
-    15 wardrobe_cabinet 
-    16 door 
-    17 indoor_lamp 
-    18 window 
-    19 stand 
-    20 dresser 
-    21 plant 
-    22 sink 
-    23 table_and_chair 
-    24 shower 
-    25 toy 
-    26 dressing_table 
-    27 music 
-    28 mirror 
-    29 shoes_cabinet 
-    30 books 
-    31 kitchenware 
-    32 toilet 
-    33 stairs 
-    34 rug 
-    35 sofa 
-    36 recreation 
-    37 shelving 
-    38 bed 
-    39 household_appliance 
-    40 air_conditioner 
-    41 fan 
-    42 bathroom_stuff 
-    43 heater 
-    44 picture_frame 
-    45 fireplace 
-    46 hanging_kitchen_cabinet 
-    47 vase 
-    48 curtain 
-    49 switch 
-    50 clock 
-    51 trash_can 
-    52 person 
-    53 partition 
-    54 gym_equipment 
-    55 headstone 
-    56 coffin 
-    57 garage_door 
-    58 decoration 
-    59 vehicle 
-    60 column 
-    61 fence 
-    62 outdoor_lamp 
-    63 outdoor_seating 
-    64 grill 
-    65 bathtub 
-    66 bench_chair 
-    67 ottoman 
-    68 workplace 
-    69 whiteboard 
-    70 candle 
-    71 pool 
-    72 ATM 
-    73 pet 
-    74 outdoor_cover 
-    75 arch 
-    76 roof 
-    77 kitchen_set 
-    78 wood_board 
-    79 pillow 
-    80 magazines 
-    81 tripod 
-    82 shoes 
-    83 trinket 
-    84 outdoor_spring 
-    85 cloth 
-    86 drinkbar 
-    87 cart 
-    88 safe 
-    89 mailbox 
-    90 storage_bench 
-    91 stand
+    """ 91 classes:
+    81 shoes
+    43 picture_frame
+    66 ottoman
+    9 chair
+    32 stairs
+    17 window
+    18 stand
+    87 safe
+    41 bathroom_stuff
+    85 drinkbar
+    40 fan
+    8 desk
+    61 outdoor_lamp
+    44 fireplace
+    35 recreation
+    34 sofa
+    53 gym_equipment
+    22 table_and_chair
+    5 hanger
+    60 fence
+    56 garage_door
+    13 computer
+    37 bed
+    27 mirror
+    69 candle
+    49 clock
+    72 pet
+    14 wardrobe_cabinet
+    82 trinket
+    33 rug
+    86 cart
+    88 mailbox
+    21 sink
+    54 headstone
+    6 kitchen_cabinet
+    65 bench_chair
+    50 trash_can
+    76 kitchen_set
+    68 whiteboard
+    67 workplace
+    78 pillow
+    42 heater
+    16 indoor_lamp
+    45 hanging_kitchen_cabinet
+    1 wall
+    71 ATM
+    79 magazines
+    12 tv_stand
+    10 table
+    24 toy
+    4 unknown
+    83 outdoor_spring
+    26 music
+    58 vehicle
+    47 curtain
+    7 kitchen_appliance
+    0 empty
+    2 ceiling
+    15 door
+    80 tripod
+    84 cloth
+    30 kitchenware
+    63 grill
+    11 television
+    28 shoes_cabinet
+    39 air_conditioner
+    38 household_appliance
+    75 roof
+    23 shower
+    59 column
+    29 books
+    64 bathtub
+    55 coffin
+    31 toilet
+    62 outdoor_seating
+    89 storage_bench
+    57 decoration
+    25 dressing_table
+    36 shelving
+    3 floor
+    73 outdoor_cover
+    77 wood_board
+    19 dresser
+    20 plant
+    46 vase
+    74 arch
+    70 pool
+    52 partition
+    51 person
+    48 switch
     """
 
 #====================================================================================================================
@@ -324,8 +324,52 @@ def npy_cutter_test():
 
 #====================================================================================================================
 
-def reduce_classes_to_13():
-    pass
+def reduce_classes_to_13(npy_file): 
+    scene   = np.load(npy_file)   
+    new_scn = np.zeros(scene.shape)
+     
+    new_scn[np.where(scene==2)]  = 0   # 'ceiling'   original is 1  
+    new_scn[np.where(scene==3)]  = 2   # 'floor'    
+    new_scn[np.where(scene==1)]  = 3   # 'wall'      
+    new_scn[np.where(scene==17)] = 4   # 'window'              
+    new_scn[np.where(scene==15)] = 5   # 'door'                
+    new_scn[np.where(scene==9)]  = 6   # 'chair'               
+    new_scn[np.where(scene==37)] = 7   # 'bed'                 
+    new_scn[np.where(scene==34)] = 8   # 'sofa'                
+    new_scn[np.where(scene==10)] = 9   # 'table'               
+    new_scn[np.where(scene==6)]  = 10  # 'kitchen_cabinet'     
+    new_scn[np.where(scene==36)] = 11  # 'shelving'            
+    new_scn[np.where(scene==14)] = 12  # 'wardrobe_cabinet'    
+    new_scn[np.where(scene==38)] = 13  # 'household_appliance'   
+    
+    
+    if len(new_scn[np.where(new_scn >= 6)]) > 0:
+        np.save('house_2/' + str(npy_file[6:-4]) + ".npy", new_scn) 
+        
+#====================================================================================================================
+
+def reduce_classes_to_13_main():
+    index = 0 
+    batch_size = 3
+    p = Pool(batch_size)
+    batch_arr = []
+    counter = 0
+    
+    for npy_file in glob.glob('house/*.npy'): 
+        if counter < batch_size:
+            batch_arr.append(npy_file)
+            counter += 1
+        else:
+            counter = 0
+            p.map(reduce_classes_to_13, batch_arr)
+            batch_arr = [npy_file]
+            counter += 1
+            index += 1
+            print index
+
+    # one by one
+    for npy_file in batch_arr:
+        reduce_classes_to_13(npy_file)
 
 #====================================================================================================================
 
@@ -334,4 +378,5 @@ if __name__ == '__main__':
     # scene_load_and_visualize_test() 
     # show_scene_size()
     # npy_cutter_test()
+    reduce_classes_to_13_main() 
     pass 
