@@ -30,8 +30,8 @@ show_accuracy_step   = 500
 save_model           = True
 save_model_step      = 1000
 visualize_scene      = True
-visualize_scene_step = 3000
-subset_train         = True 
+visualize_scene_step = 5000
+subset_train         = False 
 data_directory       = 'house_2/' 
 test_directory       = 'test/'
 
@@ -103,8 +103,7 @@ class ConvNet(object):
         conv_r1_1 = tf.nn.relu( conv_1 )  
         conv_r1_2 = tf.nn.relu( conv2d( conv_r1_1, self.params_w_['w2'], self.params_b_['b2'], "conv_r1_2" ) )   
         conv_r1_3 = tf.nn.relu( conv2d( conv_r1_2, self.params_w_['w3'], self.params_b_['b3'], "conv_r1_3" ) ) 
-        conv_r1_4 =             conv2d( conv_r1_3, self.params_w_['w4'], self.params_b_['b4'], "conv_r1_4" ) 
-
+        conv_r1_4 =             conv2d( conv_r1_3, self.params_w_['w4'], self.params_b_['b4'], "conv_r1_4" )  
         merge_1   = tf.add_n([conv_1, conv_r1_4])
         merge_1   = tf.layers.batch_normalization(merge_1)
         
@@ -112,8 +111,7 @@ class ConvNet(object):
         conv_r2_1 = tf.nn.relu( merge_1 )  
         conv_r2_2 = tf.nn.relu( conv2d( conv_r2_1, self.params_w_['w5'], self.params_b_['b5'], "conv_r2_2" ) )   
         conv_r2_3 = tf.nn.relu( conv2d( conv_r2_2, self.params_w_['w6'], self.params_b_['b6'], "conv_r2_3" ) ) 
-        conv_r2_4 =             conv2d( conv_r2_3, self.params_w_['w7'], self.params_b_['b7'], "conv_r2_4" ) 
-        
+        conv_r2_4 =             conv2d( conv_r2_3, self.params_w_['w7'], self.params_b_['b7'], "conv_r2_4" )  
         merge_2   = tf.add_n([merge_1, conv_r2_4]) 
         merge_2   = tf.layers.batch_normalization(merge_2)
         
@@ -121,18 +119,17 @@ class ConvNet(object):
         conv_r3_1 = tf.nn.relu( merge_2 )  
         conv_r3_2 = tf.nn.relu( conv2d( conv_r3_1, self.params_w_['w8'],  self.params_b_['b8'],  "conv_r3_2" ) )   
         conv_r3_3 = tf.nn.relu( conv2d( conv_r3_2, self.params_w_['w9'],  self.params_b_['b9'],  "conv_r3_3" ) ) 
-        conv_r3_4 =             conv2d( conv_r3_3, self.params_w_['w10'], self.params_b_['b10'], "conv_r3_4" )  
-        
+        conv_r3_4 =             conv2d( conv_r3_3, self.params_w_['w10'], self.params_b_['b10'], "conv_r3_4" )   
         merge_3   = tf.nn.relu( tf.add_n([merge_2, conv_r3_4]) ) 
         merge_3   = tf.layers.batch_normalization(merge_3)
         
         # Residual Block #4
         conv_2    = tf.nn.relu( conv2d( merge_3, self.params_w_['w11'], self.params_b_['b11'], "conv_2" ) )  
-        conv_3    = tf.nn.relu( conv2d( conv_2,  self.params_w_['w12'], self.params_b_['b12'], "conv_3" ) )
-        
+        conv_3    = tf.nn.relu( conv2d( conv_2,  self.params_w_['w12'], self.params_b_['b12'], "conv_3" ) ) 
         merge_4   = tf.nn.relu( tf.add_n([merge_3, conv_3]) ) 
-        conv_4    =             conv2d( merge_4,  self.params_w_['w13'], self.params_b_['b13'], "conv_4" )  
+        merge_4   = tf.layers.batch_normalization(merge_4)
         
+        conv_4    = conv2d( merge_4,  self.params_w_['w13'], self.params_b_['b13'], "conv_4" )   
         netOut    = tf.contrib.layers.flatten(conv_4)
         
         return netOut
@@ -363,7 +360,7 @@ if __name__ == '__main__':
         step         = 1
         counter      = 0
         epoch        = 1
-        alr          = 0.00001
+        alr          = 0.000001
         train_cost   = []
         valid_cost   = []
         train_accu1  = []
