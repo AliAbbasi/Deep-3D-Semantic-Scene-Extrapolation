@@ -4,11 +4,12 @@
 import numpy as np
 import glob
 from multiprocessing import Pool
+import os.path
 
 #==================================================================================================================== 
 
 colors = [" 0 0 0 255       ", " 139 0 0 255     ", "  0 128 0 255    ", " 173 216 230 255 ",
-          "0 0 255 255      ", " 255 0 0 255     ", " 218 165 32 255  ", " 210 180 140 255 ", 
+          " 0 0 255 255     ", " 255 0 0 255     ", " 218 165 32 255  ", " 210 180 140 255 ", 
           " 128 0   128 255 ", " 0  0 139 255    ", " 255 255 0 255   ", " 128 128 128 255 ",
           " 0 100 0 255     ", " 255 165 0 255   ", " 138 118 200 255 ", " 236 206 244 255 ",
           " 126 172 209 255 ", " 237 112 24 255  ", " 158 197 220 255 ", " 21 240 24 255   ",
@@ -350,22 +351,24 @@ def reduce_classes_to_13(npy_file):
 
 def reduce_classes_to_13_main():
     index = 0 
-    batch_size = 3
+    batch_size = 5
     p = Pool(batch_size)
     batch_arr = []
     counter = 0
     
     for npy_file in glob.glob('house/*.npy'): 
-        if counter < batch_size:
-            batch_arr.append(npy_file)
-            counter += 1
-        else:
-            counter = 0
-            p.map(reduce_classes_to_13, batch_arr)
-            batch_arr = [npy_file]
-            counter += 1
-            index += 1
-            print index
+        if not os.path.isfile('house_2/' + str(npy_file[6:])):
+            print npy_file
+            if counter < batch_size:
+                batch_arr.append(npy_file)
+                counter += 1
+            else:
+                counter = 0
+                p.map(reduce_classes_to_13, batch_arr)
+                batch_arr = [npy_file]
+                counter += 1
+                index += 1
+                print index
 
     # one by one
     for npy_file in batch_arr:
