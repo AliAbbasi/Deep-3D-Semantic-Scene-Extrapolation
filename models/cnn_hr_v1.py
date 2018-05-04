@@ -370,83 +370,85 @@ if __name__ == '__main__':
         batch        = []
         
         accu1tr, accu2tr = 0, 0
-        
-        while(epoch < max_epoch):    
-            time_fetch_batch = time.time()
-            for npyFile in glob.glob(data_directory + '*.npy'): 
-                trData, trLabel = [], [] 
-                
-                if counter < batch_size:  
-                    loaded_scene = np.load(npyFile)
-                    scene = utils.npy_cutter(loaded_scene, scene_shape) 
-                    batch.append(scene)
-                    counter += 1   
-                else: 
-                    print        ("fetch time: " + str(time.time() - time_fetch_batch))
-                    logging.info ("fetch time: " + str(time.time() - time_fetch_batch))
-                    time_train = time.time()
+        try:
+            while(epoch < max_epoch):    
+                time_fetch_batch = time.time()
+                for npyFile in glob.glob(data_directory + '*.npy'): 
+                    trData, trLabel = [], [] 
                     
-                    counter = 0  
-                    batch = np.reshape( batch, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))   
-                
-                    trData  = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-                    trLabel = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt  
+                    if counter < batch_size:  
+                        loaded_scene = np.load(npyFile)
+                        scene = utils.npy_cutter(loaded_scene, scene_shape) 
+                        batch.append(scene)
+                        counter += 1   
+                    else: 
+                        print        ("fetch time: " + str(time.time() - time_fetch_batch))
+                        logging.info ("fetch time: " + str(time.time() - time_fetch_batch))
+                        time_train = time.time()
+                        
+                        counter = 0  
+                        batch = np.reshape( batch, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))   
+                    
+                        trData  = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+                        trLabel = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt  
 
-                    trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
-                    trLabel = np.reshape( trLabel, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
-                    
-                    with tf.control_dependencies(extra_update_ops):  
-                        cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: trData, y: trLabel, lr: alr, keepProb: dropOut, phase: True})    
-                        train_cost.append(cost)
-                    
-                    print        ("train time: " + str(time.time() - time_train))
-                    logging.info ("train time: " + str(time.time() - time_train))
-                    
-                    time_fetch_batch = time.time()
-                    
-                    if step%1 == 0: 
-                        logging.info("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
-                        print       ("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
-                    # -------------- accuracy calculator --------------  
-                    if step % show_accuracy_step == 0 and show_accuracy:   
-                        accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size)  
-                        train_accu1.append(accu1tr)
-                        train_accu2.append(accu2tr) 
+                        trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
+                        trLabel = np.reshape( trLabel, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
                         
-                    # -------------- save mode, write cost and accuracy --------------  
-                    if step % save_model_step == 0 and save_model: 
-                        logging.info("Saving the model...") 
-                        print       ("Saving the model...") 
-                        saver.save(sess, directory + '/my-model')
-                        logging.info("creating cost and accuray plot files...") 
-                        print       ("creating cost and accuray plot files...")
-                        utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
+                        with tf.control_dependencies(extra_update_ops):  
+                            cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: trData, y: trLabel, lr: alr, keepProb: dropOut, phase: True})    
+                            train_cost.append(cost)
                         
-                    # -------------- visualize scenes -------------- 
-                    if step % visualize_scene_step == 0 and visualize_scene:
-                        show_result(sess)
+                        print        ("train time: " + str(time.time() - time_train))
+                        logging.info ("train time: " + str(time.time() - time_train))
                         
-                        # check for training on subset 
-                        if subset_train: 
-                            batch = [] 
-                            step = 1
-                            break
-                    
-                    # ---------------------------------------------
-                    step += 1  
-                    batch = []    
-                    
-            # END for binFile in glob 
-            if save_model:
-                saver.save(sess, directory + '/my-model') 
-                logging.info("\r\n Model saved! \r\n") 
-                print       ("\r\n Model saved! \r\n") 
-            
-            epoch += 1     
-            logging.info(" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
-            print       (" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
-            
-        logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
-        print       (" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
-        
+                        time_fetch_batch = time.time()
+                        
+                        if step%1 == 0: 
+                            logging.info("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
+                            print       ("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
+                        # -------------- accuracy calculator --------------  
+                        if step % show_accuracy_step == 0 and show_accuracy:   
+                            accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size)  
+                            train_accu1.append(accu1tr)
+                            train_accu2.append(accu2tr) 
+                            
+                        # -------------- save mode, write cost and accuracy --------------  
+                        if step % save_model_step == 0 and save_model: 
+                            logging.info("Saving the model...") 
+                            print       ("Saving the model...") 
+                            saver.save(sess, directory + '/my-model')
+                            logging.info("creating cost and accuray plot files...") 
+                            print       ("creating cost and accuray plot files...")
+                            utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
+                            
+                        # -------------- visualize scenes -------------- 
+                        if step % visualize_scene_step == 0 and visualize_scene:
+                            show_result(sess)
+                            
+                            # check for training on subset 
+                            if subset_train: 
+                                batch = [] 
+                                step = 1
+                                break
+                        
+                        # ---------------------------------------------
+                        step += 1  
+                        batch = []    
+                        
+                # END for binFile in glob 
+                if save_model:
+                    saver.save(sess, directory + '/my-model') 
+                    logging.info("\r\n Model saved! \r\n") 
+                    print       ("\r\n Model saved! \r\n") 
+                
+                epoch += 1     
+                logging.info(" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
+                print       (" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
+                
+            logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
+            print       (" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
+        expect Exception as e:
+            print "unkown error"
+            print e
 #======================================================================================================================================================== 
