@@ -448,7 +448,8 @@ if __name__ == '__main__':
                 
             logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
             print       (" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
-        expect Exception as e:
+        except Exception as e:
             print "unkown error"
-            print e
+            print str(e)
+            logging.info(str(e)) 
 #======================================================================================================================================================== 
