@@ -360,7 +360,7 @@ if __name__ == '__main__':
         step         = 1
         counter      = 0
         epoch        = 1
-        alr          = 0.000001
+        alr          = 0.00005
         train_cost   = []
         valid_cost   = []
         train_accu1  = []
@@ -372,7 +372,7 @@ if __name__ == '__main__':
         accu1tr, accu2tr = 0, 0
         try:
             while(epoch < max_epoch):    
-                time_fetch_batch = time.time()
+                # time_fetch_batch = time.time()
                 for npyFile in glob.glob(data_directory + '*.npy'): 
                     trData, trLabel = [], [] 
                     
@@ -382,9 +382,9 @@ if __name__ == '__main__':
                         batch.append(scene)
                         counter += 1   
                     else: 
-                        print        ("fetch time: " + str(time.time() - time_fetch_batch))
-                        logging.info ("fetch time: " + str(time.time() - time_fetch_batch))
-                        time_train = time.time()
+                        # print        ("fetch time: " + str(time.time() - time_fetch_batch))
+                        # logging.info ("fetch time: " + str(time.time() - time_fetch_batch))
+                        # time_train = time.time()
                         
                         counter = 0  
                         batch = np.reshape( batch, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))   
@@ -399,10 +399,10 @@ if __name__ == '__main__':
                             cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: trData, y: trLabel, lr: alr, keepProb: dropOut, phase: True})    
                             train_cost.append(cost)
                         
-                        print        ("train time: " + str(time.time() - time_train))
-                        logging.info ("train time: " + str(time.time() - time_train))
+                        # print        ("train time: " + str(time.time() - time_train))
+                        # logging.info ("train time: " + str(time.time() - time_train))
                         
-                        time_fetch_batch = time.time()
+                        # time_fetch_batch = time.time()
                         
                         if step%1 == 0: 
                             logging.info("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
