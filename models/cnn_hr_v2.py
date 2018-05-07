@@ -1,7 +1,7 @@
 
 #====================================================================================================================================================
 
-# 91 category of objects    
+# 14 category of objects    
 # scene size: 84 x 44 x 84     
 # focal loss
 # BN layer after each layer
@@ -24,7 +24,7 @@ scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2 
 directory            = 'cnn_hr_v2'
 to_train             = True
-to_restore           = False
+to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -155,8 +155,9 @@ class ConvNet(object):
         labels = tf.reshape(self.y,     [-1               ]) 
         
         total = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
-        total += tf.reduce_mean(focal_loss(labels[ 0:16], tf.nn.softmax(logits[ 0:16, :]))) # TODO; pass the batch_size into training and slice with that
-        total += tf.reduce_mean(focal_loss(labels[16:32], tf.nn.softmax(logits[16:32, :])))
+        # total += tf.reduce_mean(focal_loss(labels[ 0:32], tf.nn.softmax(logits[ 0:32, :]))) # TODO; pass the batch_size into training and slice with that
+        # total += tf.reduce_mean(focal_loss(labels[32:64], tf.nn.softmax(logits[32:64, :])))
+        total += tf.reduce_mean(focal_loss(labels, tf.nn.softmax(logits)))
         
         for w in self.params_w_:
             total += tf.nn.l2_loss(self.params_w_[w]) * 0.005 
@@ -319,7 +320,7 @@ if __name__ == '__main__':
     keepProb      = tf.placeholder(tf.float32                 )
     phase         = tf.placeholder(tf.bool                    )
     dropOut       = 0.5
-    batch_size    = 32
+    batch_size    = 64
     max_epoch     = 500
     ConvNet_class = ConvNet(x, y, lr, keepProb, phase)
     init_var      = tf.global_variables_initializer() 
