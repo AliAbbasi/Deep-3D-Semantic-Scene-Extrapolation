@@ -381,8 +381,9 @@ def reduce_classes_to_13_main():
 def fetch_test_set(directory='house_2/',test_st_size=10000):
     for i in xrange(test_st_size):  
         file = random.choice(os.listdir(directory))
+        print str(file)
         npy_file = np.load(directory + file)
-        np.save("test_data/" + str(file), file)
+        np.save("test_data/" + str(file), npy_file)
         os.remove(directory + file)
 
 #====================================================================================================================
@@ -402,6 +403,6 @@ if __name__ == '__main__':
     # show_scene_size()
     # npy_cutter_test()
     # reduce_classes_to_13_main() 
-    # fetch_test_set()
+    fetch_test_set()
     # print len(fetch_random_batch('test_data/', 64))
     pass 

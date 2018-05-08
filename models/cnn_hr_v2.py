@@ -240,12 +240,12 @@ def show_result(sess):
     bs = 0  
     trData, trLabel = [], [] 
     batch_arr = []
-    test_data = utils.fetch_random_batch(test_directory, 32)
+    test_data = utils.fetch_random_batch(test_directory, 64)
     
-    for test in test_data:  
+    for test in test_data:   
         loaded_file = np.load(test)
         batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
-        bs += 1  
+        bs += 1   
         
     batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
     trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
