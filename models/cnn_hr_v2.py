@@ -23,7 +23,7 @@ classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2 
 directory            = 'cnn_hr_v2'
-to_train             = True
+to_train             = False
 to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
@@ -33,7 +33,7 @@ visualize_scene      = True
 visualize_scene_step = 5000
 subset_train         = False 
 data_directory       = 'house_2/' 
-test_directory       = 'test/'
+test_directory       = 'test_data/'
 
 logging.basicConfig(filename=str(directory)+'.log', level=logging.DEBUG) 
 
@@ -240,10 +240,12 @@ def show_result(sess):
     bs = 0  
     trData, trLabel = [], [] 
     batch_arr = []
-    for test in glob.glob(test_directory+'*.npy'):  
+    test_data = utils.fetch_random_batch(test_directory, 32)
+    
+    for test in test_data:  
         loaded_file = np.load(test)
         batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
-        bs += 1 
+        bs += 1  
         
     batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
     trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
@@ -254,7 +256,7 @@ def show_result(sess):
     logging.info("A1: %g, A2: %g" % (accu1, accu2))
     print       ("A1: %g, A2: %g" % (accu1, accu2))
     
-    for test in glob.glob(test_directory+'*.npy'): 
+    for test in test_data: 
         loaded_file = np.load(test)
         scene = utils.npy_cutter(loaded_file, scene_shape)
         trData, trLabel = [], []   
@@ -276,7 +278,7 @@ def show_result(sess):
         gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
         gen_scn = np.concatenate((gen_scn, scene), axis=0)
         
-        output = open( directory + "/" + test[5:] + ".ply" , 'w') 
+        output = open( directory + "/" + test[10:] + ".ply" , 'w') 
         ply       = ""
         numOfVrtc = 0
         for idx1 in range(gen_scn.shape[0]):

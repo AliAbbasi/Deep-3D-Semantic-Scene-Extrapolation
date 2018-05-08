@@ -387,6 +387,15 @@ def fetch_test_set(directory='house_2/',test_st_size=10000):
 
 #====================================================================================================================
 
+def fetch_random_batch(directory, bs):
+    batch_arr = []
+    for i in xrange(bs):
+        file = random.choice(os.listdir(directory))
+        batch_arr.append(directory + file)
+    return batch_arr
+
+#====================================================================================================================
+
 if __name__ == '__main__':
     # load_time_test()
     # scene_load_and_visualize_test() 
@@ -394,4 +403,5 @@ if __name__ == '__main__':
     # npy_cutter_test()
     # reduce_classes_to_13_main() 
     # fetch_test_set()
+    # print len(fetch_random_batch('test_data/', 64))
     pass 
