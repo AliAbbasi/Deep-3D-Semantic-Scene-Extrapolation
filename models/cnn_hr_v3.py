@@ -5,6 +5,8 @@
 # scene size: 84 x 44 x 84     
 # focal loss
 # BN layer after each layer
+# more residual blocks
+# fetch random batches
 
 #====================================================================================================================================================
 
@@ -22,18 +24,21 @@ import utils # TODO fix it later
 classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2 
-directory            = 'cnn_hr_v2'
+directory            = 'cnn_hr_v3'
 to_train             = True
-to_restore           = True
+to_restore           = False
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
 save_model_step      = 1000
 visualize_scene      = True
-visualize_scene_step = 5000
-subset_train         = False 
+visualize_scene_step = 3125
+subset_train         = True 
 data_directory       = 'house_2/' 
 test_directory       = 'test_data/'
+max_iter             = 50000
+learning_rate        = 0.00005 
+batch_size           = 32 
 
 logging.basicConfig(filename=str(directory)+'.log', level=logging.DEBUG) 
 
@@ -46,19 +51,33 @@ class ConvNet(object):
 
     def paramsFun(self): 
         params_w = {
-                    'w1'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , halfed_scene_shape , 64               ], stddev = 0.01 )),  
+                    'w1'   : tf.Variable(tf.truncated_normal( [ 7 , 7 , halfed_scene_shape , 64               ], stddev = 0.01 )),  
+                    
                     'w2'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w3'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),
-                    'w4'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w3'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),
+                    'w4'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
+                    
                     'w5'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w6'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w7'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w8'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w6'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w7'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
+                    
+                    'w8'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),  
                     'w9'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w10'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),   
-                    'w11'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),   
-                    'w12'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w13'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , classes_count*halfed_scene_shape ], stddev = 0.01 ))
+                    'w10'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )), 
+                    
+                    'w11'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),   
+                    'w12'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w13'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),  
+                    
+                    'w14'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),   
+                    'w15'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w16'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )), 
+                    
+                    'w17'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),   
+                    'w18'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
+                    'w19'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
+                    
+                    'wOut' : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , classes_count*halfed_scene_shape ], stddev = 0.01 ))
                    } 
         params_b = {
                     'b1'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
@@ -73,7 +92,14 @@ class ConvNet(object):
                     'b10'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
                     'b11'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
                     'b12'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b13'  : tf.Variable(tf.truncated_normal( [ classes_count*halfed_scene_shape ], stddev = 0.01 ))
+                    'b13'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b14'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b15'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b16'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b17'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b18'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'b19'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+                    'bOut' : tf.Variable(tf.truncated_normal( [ classes_count*halfed_scene_shape ], stddev = 0.01 ))
                    } 
                    
         return params_w,params_b
@@ -118,17 +144,31 @@ class ConvNet(object):
         conv_r3_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_1, self.params_w_['w8'],  self.params_b_['b8'],  "conv_r3_2" ) ))   
         conv_r3_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_2, self.params_w_['w9'],  self.params_b_['b9'],  "conv_r3_3" ) )) 
         conv_r3_4 =                                           conv2d( conv_r3_3, self.params_w_['w10'], self.params_b_['b10'], "conv_r3_4" )   
-        merge_3   = tf.nn.relu( tf.add_n([merge_2, conv_r3_4]) )  
+        merge_3   = tf.add_n([merge_2, conv_r3_4])  
         
         # Residual Block #4
-        conv_2    = tf.layers.batch_normalization(tf.nn.relu( conv2d( merge_3, self.params_w_['w11'], self.params_b_['b11'], "conv_2" ) ))  
-        conv_3    = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_2,  self.params_w_['w12'], self.params_b_['b12'], "conv_3" ) ))
-        merge_4   = tf.layers.batch_normalization(tf.nn.relu( tf.add_n([merge_3, conv_3]) )) 
+        conv_r4_1 = tf.layers.batch_normalization(tf.nn.relu( merge_3 ))  
+        conv_r4_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_1, self.params_w_['w10'], self.params_b_['b10'], "conv_r4_2" ) ))   
+        conv_r4_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_2, self.params_w_['w11'], self.params_b_['b11'], "conv_r4_3" ) )) 
+        conv_r4_4 =                                           conv2d( conv_r4_3, self.params_w_['w12'], self.params_b_['b12'], "conv_r4_4" )   
+        merge_4   = tf.add_n([merge_3, conv_r4_4]) 
         
-        conv_4    = conv2d( merge_4,  self.params_w_['w13'], self.params_b_['b13'], "conv_4" )   
-        netOut    = tf.contrib.layers.flatten(conv_4)
+        # Residual Block #5
+        conv_r5_1 = tf.layers.batch_normalization(tf.nn.relu( merge_4 ))  
+        conv_r5_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_1, self.params_w_['w13'], self.params_b_['b13'], "conv_r5_2" ) ))   
+        conv_r5_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_2, self.params_w_['w14'], self.params_b_['b14'], "conv_r5_3" ) )) 
+        conv_r5_4 =                                           conv2d( conv_r5_3, self.params_w_['w15'], self.params_b_['b15'], "conv_r5_4" )   
+        merge_5   = tf.add_n([merge_4, conv_r5_4]) 
         
-        return netOut
+        # Residual Block #6
+        conv_r6_1 = tf.layers.batch_normalization(tf.nn.relu( merge_5 ))  
+        conv_r6_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_1, self.params_w_['w16'], self.params_b_['b16'], "conv_r6_2" ) ))   
+        conv_r6_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_2, self.params_w_['w17'], self.params_b_['b17'], "conv_r6_3" ) )) 
+        conv_r6_4 =                                           conv2d( conv_r6_3, self.params_w_['w18'], self.params_b_['b18'], "conv_r6_4" )   
+        merge_6   = tf.add_n([merge_5, conv_r6_4]) 
+        
+        conv_out  = tf.contrib.layers.flatten(conv2d(merge_6, self.params_w_['wOut'], self.params_b_['bOut'], "conv_out"))     
+        return conv_out
         
     #---------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -154,9 +194,7 @@ class ConvNet(object):
         logits = tf.reshape(self.score, [-1, classes_count])
         labels = tf.reshape(self.y,     [-1               ]) 
         
-        total = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
-        # total += tf.reduce_mean(focal_loss(labels[ 0:32], tf.nn.softmax(logits[ 0:32, :]))) # TODO; pass the batch_size into training and slice with that
-        # total += tf.reduce_mean(focal_loss(labels[32:64], tf.nn.softmax(logits[32:64, :])))
+        total = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)) 
         total += tf.reduce_mean(focal_loss(labels, tf.nn.softmax(logits)))
         
         for w in self.params_w_:
@@ -274,7 +312,7 @@ def show_result(sess):
         
         gen_scn = np.concatenate((trData, score), axis=2) 
         
-        empty_space = np.zeros((10, 44, 84))
+        empty_space = np.zeros((10, scene_shape[1], scene_shape[2]))
         gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
         gen_scn = np.concatenate((gen_scn, scene), axis=0)
         
@@ -322,8 +360,6 @@ if __name__ == '__main__':
     keepProb      = tf.placeholder(tf.float32                 )
     phase         = tf.placeholder(tf.bool                    )
     dropOut       = 0.5
-    batch_size    = 64
-    max_epoch     = 500
     ConvNet_class = ConvNet(x, y, lr, keepProb, phase)
     init_var      = tf.global_variables_initializer() 
     saver         = tf.train.Saver() 
@@ -355,87 +391,89 @@ if __name__ == '__main__':
             sys.exit(0)
         
         # -------------- train phase --------------
-        step         = 1
-        counter      = 0
-        epoch        = 1
-        alr          = 0.00005
+        step         = 1  
         train_cost   = []
         valid_cost   = []
         train_accu1  = []
         train_accu2  = []
         valid_accu1  = []
         valid_accu2  = []
-        batch        = []
+        
+        all_data = []
+        for item in glob.glob(data_directory + "*.npy"):
+            all_data.append(item)
+        
+        batch_threshold = 0
+        if subset_train:
+            batch_threshold = batch_size * visualize_scene_step
+        else:
+            batch_threshold = len(all_data)
         
         accu1tr, accu2tr = 0, 0
         try:
-            while(epoch < max_epoch):     
-                for npyFile in glob.glob(data_directory + '*.npy'): 
-                    trData, trLabel = [], [] 
+            while(step < max_iter):    
+                batch, trData, trLabel = [], [], []
+                fetch_time = time.time() 
+                
+                random_batch = []
+                for i in xrange(batch_size): # randomly fetch batch
+                    random_batch.append(all_data[random.randint(0, batch_threshold)])
+                
+                for npyFile in random_batch: 
+                    loaded_scene = np.load(npyFile)
+                    scene = utils.npy_cutter(loaded_scene, scene_shape) 
+                    batch.append(scene)
                     
-                    if counter < batch_size:  
-                        loaded_scene = np.load(npyFile)
-                        scene = utils.npy_cutter(loaded_scene, scene_shape) 
-                        batch.append(scene)
-                        counter += 1   
-                    else:  
-                        counter = 0  
-                        batch = np.reshape( batch, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))   
-                    
-                        trData  = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-                        trLabel = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt  
+                batch = np.reshape( batch, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))   
+                
+                # print "fetch time: ", time.time() - fetch_time
+                train_time = time.time()
+            
+                trData  = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+                trLabel = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt  
 
-                        trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
-                        trLabel = np.reshape( trLabel, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
-                        
-                        with tf.control_dependencies(extra_update_ops):  
-                            cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: trData, y: trLabel, lr: alr, keepProb: dropOut, phase: True})    
-                            train_cost.append(cost) 
-                        
-                        if step%1 == 0: 
-                            logging.info("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
-                            print       ("%s , E:%g , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], epoch, step, alr, accu1tr, accu2tr, cost ))
-                        # -------------- accuracy calculator --------------  
-                        if step % show_accuracy_step == 0 and show_accuracy:   
-                            accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size)  
-                            train_accu1.append(accu1tr)
-                            train_accu2.append(accu2tr) 
-                            
-                        # -------------- save mode, write cost and accuracy --------------  
-                        if step % save_model_step == 0 and save_model: 
-                            logging.info("Saving the model...") 
-                            print       ("Saving the model...") 
-                            saver.save(sess, directory + '/my-model')
-                            logging.info("creating cost and accuray plot files...") 
-                            print       ("creating cost and accuray plot files...")
-                            utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
-                            
-                        # -------------- visualize scenes -------------- 
-                        if step % visualize_scene_step == 0 and visualize_scene:
-                            show_result(sess)
-                            
-                            # check for training on subset 
-                            if subset_train: 
-                                batch = [] 
-                                step = 1
-                                break
-                        
-                        # ---------------------------------------------
-                        step += 1  
-                        batch = []    
-                        
-                # END for binFile in glob 
-                if save_model:
-                    saver.save(sess, directory + '/my-model') 
-                    logging.info("\r\n Model saved! \r\n") 
-                    print       ("\r\n Model saved! \r\n") 
+                trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
+                trLabel = np.reshape( trLabel, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
                 
-                epoch += 1     
-                logging.info(" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
-                print       (" --- \r\n --- \r\n  The Epoch: " + str(epoch) + " is Started. \r\n --- \r\n ---") 
+                with tf.control_dependencies(extra_update_ops):  
+                    cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: trData, y: trLabel, lr: learning_rate, keepProb: dropOut, phase: True})    
+                    train_cost.append(cost) 
                 
-            logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
-            print       (" --- \r\n --- \r\n  Trainig process is done after " + str(maxEpoch) + " epochs. \r\n --- \r\n ---")
+                # -------------- prints --------------
+                if step%1 == 0: 
+                    logging.info(" %s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
+                    print       (" %s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
+                # -------------- accuracy calculator --------------  
+                if step % show_accuracy_step == 0 and show_accuracy:   
+                    accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size)  
+                    train_accu1.append(accu1tr)
+                    train_accu2.append(accu2tr) 
+                    
+                # -------------- save mode, write cost and accuracy --------------  
+                if step % save_model_step == 0 and save_model: 
+                    logging.info("Saving the model...") 
+                    print       ("Saving the model...") 
+                    saver.save(sess, directory + '/my-model')
+                    logging.info("creating cost and accuray plot files...") 
+                    print       ("creating cost and accuray plot files...")
+                    utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
+                    
+                # -------------- visualize scenes -------------- 
+                if step % visualize_scene_step == 0 and visualize_scene:
+                    show_result(sess)
+                    
+                    # check for training on subset 
+                    if subset_train: 
+                        batch = [] 
+                        step = 1
+                        break
+                
+                # ---------------------------------------------
+                # print "train time: ", time.time() - train_time
+                step += 1    
+                
+            logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(max_iter) + " iterations. \r\n --- \r\n ---")
+            print       (" --- \r\n --- \r\n  Trainig process is done after " + str(max_iter) + " iterations. \r\n --- \r\n ---")
             
         except Exception as e:
             print "unkown error"
