@@ -26,7 +26,7 @@ scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2 
 directory            = 'cnn_hr_v3'
 to_train             = True
-to_restore           = False
+to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -278,7 +278,7 @@ def show_result(sess):
     bs = 0  
     trData, trLabel = [], [] 
     batch_arr = []
-    test_data = utils.fetch_random_batch(test_directory, 64)
+    test_data = utils.fetch_random_batch(test_directory, batch_size)
     
     for test in test_data:   
         loaded_file = np.load(test)
@@ -462,12 +462,6 @@ if __name__ == '__main__':
                 if step % visualize_scene_step == 0 and visualize_scene:
                     show_result(sess)
                     
-                    # check for training on subset 
-                    if subset_train: 
-                        batch = [] 
-                        step = 1
-                        break
-                
                 # ---------------------------------------------
                 # print "train time: ", time.time() - train_time
                 step += 1    
