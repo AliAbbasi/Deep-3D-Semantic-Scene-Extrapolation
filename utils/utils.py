@@ -54,7 +54,7 @@ def write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, trai
         for j in range(100):
             output.write( "valid_cost.append("+ str(valid_cost[i]) +")" + "\r\n" )   
     output.write( "plt.plot( steps , train_cost, color ='b', lw=1 )   " + "\r\n" )
-    output.write( "plt.plot( steps , valid_cost, color ='g', lw=1 )   " + "\r\n" )
+    # output.write( "plt.plot( steps , valid_cost, color ='g', lw=1 )   " + "\r\n" )
     output.write( "plt.xlabel('Steps', fontsize=14)                   " + "\r\n" )
     output.write( "plt.ylabel('Cost',  fontsize=14)                   " + "\r\n" )
     output.write( "plt.suptitle('Blue: Train Cost, Green: Valid Cost')" + "\r\n" )
@@ -403,6 +403,6 @@ if __name__ == '__main__':
     # show_scene_size()
     # npy_cutter_test()
     # reduce_classes_to_13_main() 
-    fetch_test_set()
+    # fetch_test_set()
     # print len(fetch_random_batch('test_data/', 64))
     pass 

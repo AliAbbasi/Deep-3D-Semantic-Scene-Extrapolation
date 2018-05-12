@@ -26,7 +26,7 @@ scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2 
 directory            = 'cnn_hr_v3'
 to_train             = True
-to_restore           = True
+to_restore           = False
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -34,16 +34,31 @@ save_model_step      = 1000
 visualize_scene      = True
 visualize_scene_step = 3125
 subset_train         = True 
-data_directory       = 'house_2/' 
+train_directory      = 'house_2/' 
 test_directory       = 'test_data/'
 max_iter             = 50000
-learning_rate        = 0.00005 
+learning_rate        = 0.000005 
 batch_size           = 32 
 
 logging.basicConfig(filename=str(directory)+'.log', level=logging.DEBUG) 
 
 if not os.path.exists(directory):
     os.makedirs(directory)
+    
+train_data = []  
+test_data  = []
+
+for item in glob.glob(train_directory + "*.npy"):
+    train_data.append(item)
+    
+for item in glob.glob(test_directory + "*.npy"):
+    test_data.append(item)
+
+batch_threshold = 0
+if subset_train:
+    batch_threshold = batch_size * visualize_scene_step
+else:
+    batch_threshold = len(train_data)
     
 #=====================================================================================================================================================
 
@@ -349,6 +364,29 @@ def show_result(sess):
     print       ("A1: %g, A2: %g" % (accu1, accu2))   
     
 #===================================================================================================================================================
+
+def fetch_x_y(data, limit):
+    batch, x, y = [], [], []  
+    random_batch = []
+    for i in xrange(batch_size): # randomly fetch batch
+        random_batch.append(data[random.randint(0, limit)])
+
+    for npyFile in random_batch: 
+        loaded_scene = np.load(npyFile)
+        scene = utils.npy_cutter(loaded_scene, scene_shape) 
+        batch.append(scene)
+        
+    batch = np.reshape( batch, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))    
+
+    x = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+    y = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt  
+
+    x = np.reshape( x, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
+    y = np.reshape( y, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
+
+    return x, y
+
+#===================================================================================================================================================
   
 if __name__ == '__main__':
 
@@ -399,55 +437,36 @@ if __name__ == '__main__':
         valid_accu1  = []
         valid_accu2  = []
         
-        all_data = []
-        for item in glob.glob(data_directory + "*.npy"):
-            all_data.append(item)
         
-        batch_threshold = 0
-        if subset_train:
-            batch_threshold = batch_size * visualize_scene_step
-        else:
-            batch_threshold = len(all_data)
         
         accu1tr, accu2tr = 0, 0
         try:
             while(step < max_iter):    
-                batch, trData, trLabel = [], [], []
-                fetch_time = time.time() 
-                
-                random_batch = []
-                for i in xrange(batch_size): # randomly fetch batch
-                    random_batch.append(all_data[random.randint(0, batch_threshold)])
-                
-                for npyFile in random_batch: 
-                    loaded_scene = np.load(npyFile)
-                    scene = utils.npy_cutter(loaded_scene, scene_shape) 
-                    batch.append(scene)
-                    
-                batch = np.reshape( batch, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))   
-                
-                # print "fetch time: ", time.time() - fetch_time
-                train_time = time.time()
             
-                trData  = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-                trLabel = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt  
-
-                trData  = np.reshape( trData,  ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
-                trLabel = np.reshape( trLabel, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
+                x_batch, y_batch = fetch_x_y(train_data, batch_threshold)  
                 
                 with tf.control_dependencies(extra_update_ops):  
-                    cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: trData, y: trLabel, lr: learning_rate, keepProb: dropOut, phase: True})    
+                    cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: x_batch, y: y_batch, lr: learning_rate, keepProb: dropOut, phase: True})    
                     train_cost.append(cost) 
                 
                 # -------------- prints --------------
                 if step%1 == 0: 
-                    logging.info(" %s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
-                    print       (" %s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
+                    logging.info("%s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
+                    print       ("%s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
+                
                 # -------------- accuracy calculator --------------  
                 if step % show_accuracy_step == 0 and show_accuracy:   
-                    accu1tr, accu2tr = accuFun(sess, trData, trLabel, batch_size)  
+                    accu1tr, accu2tr = accuFun(sess, x_batch, y_batch, batch_size)  
                     train_accu1.append(accu1tr)
                     train_accu2.append(accu2tr) 
+                    
+                    # valid accuray
+                    v_x_batch, v_y_batch = fetch_x_y(test_data, len(test_data)) 
+                    accu1v, accu2v = accuFun(sess, v_x_batch, v_y_batch, batch_size)  
+                    valid_accu1.append(accu1v)
+                    valid_accu2.append(accu2v)
+                    logging.info("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
+                    print       ("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
                     
                 # -------------- save mode, write cost and accuracy --------------  
                 if step % save_model_step == 0 and save_model: 
