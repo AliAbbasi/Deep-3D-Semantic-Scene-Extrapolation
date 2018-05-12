@@ -7,6 +7,7 @@
 # BN layer after each layer
 # more residual blocks
 # fetch random batches
+# input is solid half, output is whole scene and segmented
 
 #====================================================================================================================================================
 
@@ -24,7 +25,7 @@ import utils # TODO fix it later
 classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2 
-directory            = 'cnn_hr_v3'
+directory            = 'cnn_hr_v4'
 to_train             = True
 to_restore           = False
 show_accuracy        = True
@@ -37,7 +38,7 @@ subset_train         = True
 train_directory      = 'house_2/' 
 test_directory       = 'test_data/'
 max_iter             = 50000
-learning_rate        = 0.00005
+learning_rate        = 0.00005 
 batch_size           = 32 
 
 logging.basicConfig(filename=str(directory)+'.log', level=logging.DEBUG) 
@@ -92,7 +93,7 @@ class ConvNet(object):
                     'w18'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
                     'w19'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
                     
-                    'wOut' : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , classes_count*halfed_scene_shape ], stddev = 0.01 ))
+                    'wOut' : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , classes_count*scene_shape[2]     ], stddev = 0.01 ))
                    } 
         params_b = {
                     'b1'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
@@ -114,7 +115,7 @@ class ConvNet(object):
                     'b17'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
                     'b18'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
                     'b19'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'bOut' : tf.Variable(tf.truncated_normal( [ classes_count*halfed_scene_shape ], stddev = 0.01 ))
+                    'bOut' : tf.Variable(tf.truncated_normal( [ classes_count*scene_shape[2]     ], stddev = 0.01 ))
                    } 
                    
         return params_w,params_b
@@ -213,11 +214,11 @@ class ConvNet(object):
         total += tf.reduce_mean(focal_loss(labels, tf.nn.softmax(logits)))
         
         for w in self.params_w_:
-            total += tf.nn.l2_loss(self.params_w_[w]) * 0.005 
+            total += tf.nn.l2_loss(self.params_w_[w]) * 0.05 
             
         # penalty term
         logits       = tf.reshape(self.score, [-1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count])
-        labels       = tf.reshape(self.y,     [-1, scene_shape[0], scene_shape[1], halfed_scene_shape               ])
+        labels       = tf.reshape(self.y,     [-1, scene_shape[0], scene_shape[1], scene_shape[2]                   ])
         split_logits = tf.split(axis=3, num_or_size_splits=halfed_scene_shape, value=logits)
         split_labels = tf.split(axis=3, num_or_size_splits=halfed_scene_shape, value=labels)
         
@@ -250,8 +251,8 @@ class ConvNet(object):
 def accuFun(sess, trData, trLabel, batch_size):
 
     score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
-    score   = np.reshape( score,   ( batch_size, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ) )  
-    trLabel = np.reshape( trLabel, ( batch_size, scene_shape[0], scene_shape[1], halfed_scene_shape ))   
+    score   = np.reshape( score,   ( batch_size, scene_shape[0], scene_shape[1], scene_shape[2], classes_count ) )  
+    trLabel = np.reshape( trLabel, ( batch_size, scene_shape[0], scene_shape[1], scene_shape[2] ))   
     
     totalAccuOveral   = 0.0
     totalAccuOccupied = 0.0
@@ -263,7 +264,7 @@ def accuFun(sess, trData, trLabel, batch_size):
         
         for idx2 in range(0, scene_shape[0]):
             for idx3 in range(0, scene_shape[1]):   
-                for idx4 in range(0, halfed_scene_shape):   
+                for idx4 in range(0, scene_shape[2]):   
                     maxIdxPred = np.argmax(score[idxBatch][idx2][idx3][idx4])  
                     
                     if maxIdxPred == trLabel[idxBatch][idx2][idx3][idx4]:
@@ -274,9 +275,9 @@ def accuFun(sess, trData, trLabel, batch_size):
                     if trLabel[idxBatch][idx2][idx3][idx4] > 0:
                         totalOccupied+= 1    
                     
-        totalAccuOveral += (positiveOverall / (scene_shape[0] * scene_shape[1] * halfed_scene_shape * 1.0))    
+        totalAccuOveral += (positiveOverall / (scene_shape[0] * scene_shape[1] * scene_shape[2] * 1.0))    
         if totalOccupied == 0:
-            totalOccupied = (scene_shape[0] * scene_shape[1] * halfed_scene_shape * 1.0)
+            totalOccupied = (scene_shape[0] * scene_shape[1] * scene_shape[2] * 1.0)
         totalAccuOccupied += (positiveOccupied / totalOccupied) 
         
     totalAccuOveral   =  totalAccuOveral   / (batch_size * 1.0)
@@ -302,7 +303,8 @@ def show_result(sess):
         
     batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
     trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-    trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt     
+    trData[np.where(trData>=1)] = 1
+    trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:scene_shape[2]     ]  # gt     
     trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))  
     score   = sess.run(ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
     accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
@@ -318,14 +320,14 @@ def show_result(sess):
         trData, trLabel = [], []   
 
         trData  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
-        trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
+        trData[np.where(trData>=1)] = 1
+        trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:scene_shape[2] ]  # gt 
         
         trData  = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
         score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
-        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
+        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], scene_shape[2], classes_count ))  
         score   = np.argmax ( score, 3)     
-        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
-        score   = score[0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape]            
+        score   = np.reshape( score,  (scene_shape[0], scene_shape[1], scene_shape[2] ))    
         trData  = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
         
         gen_scn = np.concatenate((trData, score), axis=2) 
@@ -382,10 +384,11 @@ def fetch_x_y(data, limit):
     batch = np.reshape( batch, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))    
 
     x = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-    y = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt  
+    x[np.where(x>=1)] = 1
+    y = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], 0:scene_shape[2] ]  # gt  
 
     x = np.reshape( x, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
-    y = np.reshape( y, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
+    y = np.reshape( y, ( -1, scene_shape[0] * scene_shape[1] * scene_shape[2]     ))
 
     return x, y
 
@@ -394,7 +397,7 @@ def fetch_x_y(data, limit):
 if __name__ == '__main__':
 
     input         = scene_shape[0] * scene_shape[1] * halfed_scene_shape
-    out           = scene_shape[0] * scene_shape[1] * halfed_scene_shape  
+    out           = scene_shape[0] * scene_shape[1] * scene_shape[2]  
     x             = tf.placeholder(tf.float32, [ None, input ])
     y             = tf.placeholder(tf.int32  , [ None, out   ])   
     lr            = tf.placeholder(tf.float32                 )   

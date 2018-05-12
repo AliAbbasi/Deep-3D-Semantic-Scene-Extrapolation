@@ -79,13 +79,11 @@ def write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, trai
     for i in range(len(train_accu2)):
         output.write( "train_accu2.append("+ str(train_accu2[i]) +")" + "\r\n" )       
     output.write( "\r\n \r\n \r\n" )
-    for i in range(len(valid_accu1)):
-        for j in range(100):
-            output.write( "valid_accu1.append("+ str(valid_accu1[i]) +")" + "\r\n" )   
+    for i in range(len(valid_accu1)): 
+        output.write( "valid_accu1.append("+ str(valid_accu1[i]) +")" + "\r\n" )   
     output.write( "\r\n \r\n \r\n" )
-    for i in range(len(valid_accu2)):
-        for j in range(100):
-            output.write( "valid_accu2.append("+ str(valid_accu2[i]) +")" + "\r\n" ) 
+    for i in range(len(valid_accu2)): 
+        output.write( "valid_accu2.append("+ str(valid_accu2[i]) +")" + "\r\n" ) 
     output.write( "plt.plot( steps , train_accu1, color ='b', lw=3 )   " + "\r\n" )
     output.write( "plt.plot( steps , train_accu2, color ='b', lw=1 )   " + "\r\n" )
     output.write( "plt.plot( steps , valid_accu1, color ='g', lw=3 )   " + "\r\n" )
