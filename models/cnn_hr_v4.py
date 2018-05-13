@@ -444,55 +444,50 @@ if __name__ == '__main__':
         valid_accu2  = [] 
         accu1tr, accu2tr = 0, 0
         
-        try:
-            while(step < max_iter):    
+        while(step < max_iter):    
+        
+            x_batch, y_batch = fetch_x_y(train_data, batch_threshold)  
             
-                x_batch, y_batch = fetch_x_y(train_data, batch_threshold)  
-                
-                with tf.control_dependencies(extra_update_ops):  
-                    cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: x_batch, y: y_batch, lr: learning_rate, keepProb: dropOut, phase: True})    
-                    train_cost.append(cost) 
-                
-                # -------------- prints --------------
-                if step%1 == 0: 
-                    logging.info("%s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
-                    print       ("%s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
-                
-                # -------------- accuracy calculator --------------  
-                if step % show_accuracy_step == 0 and show_accuracy:   
-                    accu1tr, accu2tr = accuFun(sess, x_batch, y_batch, batch_size)  
-                    train_accu1.append(accu1tr)
-                    train_accu2.append(accu2tr) 
-                    
-                    # valid accuray
-                    v_x_batch, v_y_batch = fetch_x_y(test_data, len(test_data)) 
-                    accu1v, accu2v = accuFun(sess, v_x_batch, v_y_batch, batch_size)  
-                    valid_accu1.append(accu1v)
-                    valid_accu2.append(accu2v)
-                    logging.info("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
-                    print       ("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
-                    
-                # -------------- save mode, write cost and accuracy --------------  
-                if step % save_model_step == 0 and save_model: 
-                    logging.info("Saving the model...") 
-                    print       ("Saving the model...") 
-                    saver.save(sess, directory + '/my-model')
-                    logging.info("creating cost and accuray plot files...") 
-                    print       ("creating cost and accuray plot files...")
-                    utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
-                    
-                # -------------- visualize scenes -------------- 
-                if step % visualize_scene_step == 0 and visualize_scene:
-                    show_result(sess)
-                    
-                # --------------------------------------------- 
-                step += 1    
-                
-            logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(max_iter) + " iterations. \r\n --- \r\n ---")
-            print       (" --- \r\n --- \r\n  Trainig process is done after " + str(max_iter) + " iterations. \r\n --- \r\n ---")
+            with tf.control_dependencies(extra_update_ops):  
+                cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: x_batch, y: y_batch, lr: learning_rate, keepProb: dropOut, phase: True})    
+                train_cost.append(cost) 
             
-        except Exception as e:
-            print "unkown error"
-            print str(e)
-            logging.info(str(e)) 
+            # -------------- prints --------------
+            if step%1 == 0: 
+                logging.info("%s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
+                print       ("%s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
+            
+            # -------------- accuracy calculator --------------  
+            if step % show_accuracy_step == 0 and show_accuracy:   
+                accu1tr, accu2tr = accuFun(sess, x_batch, y_batch, batch_size)  
+                train_accu1.append(accu1tr)
+                train_accu2.append(accu2tr) 
+                
+                # valid accuray
+                v_x_batch, v_y_batch = fetch_x_y(test_data, len(test_data)) 
+                accu1v, accu2v = accuFun(sess, v_x_batch, v_y_batch, batch_size)  
+                valid_accu1.append(accu1v)
+                valid_accu2.append(accu2v)
+                logging.info("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
+                print       ("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
+                
+            # -------------- save mode, write cost and accuracy --------------  
+            if step % save_model_step == 0 and save_model: 
+                logging.info("Saving the model...") 
+                print       ("Saving the model...") 
+                saver.save(sess, directory + '/my-model')
+                logging.info("creating cost and accuray plot files...") 
+                print       ("creating cost and accuray plot files...")
+                utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
+                
+            # -------------- visualize scenes -------------- 
+            if step % visualize_scene_step == 0 and visualize_scene:
+                show_result(sess)
+                
+            # --------------------------------------------- 
+            step += 1    
+            
+        logging.info(" --- \r\n --- \r\n  Trainig process is done after " + str(max_iter) + " iterations. \r\n --- \r\n ---")
+        print       (" --- \r\n --- \r\n  Trainig process is done after " + str(max_iter) + " iterations. \r\n --- \r\n ---")
+        
 #======================================================================================================================================================== 
