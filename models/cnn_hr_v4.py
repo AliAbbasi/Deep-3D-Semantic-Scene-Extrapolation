@@ -305,8 +305,7 @@ def show_result(sess):
     trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
     trData[np.where(trData>=1)] = 1
     trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:scene_shape[2]     ]  # gt     
-    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))  
-    score   = sess.run(ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
+    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
     accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))
     print       ("A1: %g, A2: %g" % (accu1, accu2))

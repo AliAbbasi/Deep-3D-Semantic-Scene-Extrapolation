@@ -33,7 +33,7 @@ save_model           = True
 save_model_step      = 1000
 visualize_scene      = True
 visualize_scene_step = 3125
-subset_train         = True 
+subset_train         = False 
 train_directory      = 'house_2/' 
 test_directory       = 'test_data/'
 max_iter             = 50000
@@ -303,8 +303,7 @@ def show_result(sess):
     batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
     trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
     trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt     
-    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))  
-    score   = sess.run(ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
+    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
     accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))
     print       ("A1: %g, A2: %g" % (accu1, accu2))
