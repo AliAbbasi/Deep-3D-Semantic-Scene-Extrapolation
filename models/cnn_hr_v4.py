@@ -296,20 +296,20 @@ def show_result(sess):
     batch_arr = []
     test_data = utils.fetch_random_batch(test_directory, batch_size)
     
-    # for test in test_data:   
-        # loaded_file = np.load(test)
-        # batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
-        # bs += 1   
+    for test in test_data:   
+        loaded_file = np.load(test)
+        batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
+        bs += 1   
         
-    # batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
-    # trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-    # trData[np.where(trData>=1)] = 1
-    # trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:scene_shape[2]     ]  # gt     
-    # trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))  
-    # score   = sess.run(ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
-    # accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
-    # logging.info("A1: %g, A2: %g" % (accu1, accu2))
-    # print       ("A1: %g, A2: %g" % (accu1, accu2))
+    batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
+    trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+    trData[np.where(trData>=1)] = 1
+    trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:scene_shape[2]     ]  # gt     
+    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))  
+    score   = sess.run(ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False}) 
+    accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
+    logging.info("A1: %g, A2: %g" % (accu1, accu2))
+    print       ("A1: %g, A2: %g" % (accu1, accu2))
     
     for item in glob.glob(directory + "*.ply"):
         os.remove(item)
