@@ -309,7 +309,7 @@ def show_result(sess):
     logging.info("A1: %g, A2: %g" % (accu1, accu2))
     print       ("A1: %g, A2: %g" % (accu1, accu2))
     
-    for item in glob.glob(directory + "*.ply"):
+    for item in glob.glob(directory + "/*.ply"):
         os.remove(item)
     
     for test in test_data: 

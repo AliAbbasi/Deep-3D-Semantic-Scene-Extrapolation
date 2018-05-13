@@ -311,7 +311,7 @@ def show_result(sess):
     logging.info("A1: %g, A2: %g" % (accu1, accu2))
     print       ("A1: %g, A2: %g" % (accu1, accu2))
     
-    for item in glob.glob(directory + "*.ply"):
+    for item in glob.glob(directory + "/*.ply"):
         os.remove(item)
     
     for test in test_data: 
@@ -327,17 +327,8 @@ def show_result(sess):
         score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
         score   = np.reshape( score, ( scene_shape[0], scene_shape[1], scene_shape[2], classes_count ))  
         score   = np.argmax ( score, 3)     
-        score   = np.reshape( score,  (scene_shape[0], scene_shape[1], scene_shape[2] ))    
-        trData  = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
-        
-        gen_scn = np.concatenate((trData, score), axis=2) 
-        
-        empty_space = np.zeros((10, scene_shape[1], scene_shape[2] + halfed_scene_shape))
-        gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
-        
-        empty_space = np.zeros((scene_shape[0], scene_shape[1], halfed_scene_shape))
-        scene = np.concatenate((scene, empty_space), axis=2) 
-        gen_scn = np.concatenate((gen_scn, scene), axis=0)
+        score   = np.reshape( score,  (scene_shape[0], scene_shape[1], scene_shape[2] ))     
+        gen_scn = score
         
         output = open( directory + "/" + test[10:] + ".ply" , 'w') 
         ply       = ""
