@@ -367,7 +367,7 @@ def fetch_x_y(data, limit):
     batch, x, y = [], [], []  
     random_batch = []
     for i in xrange(batch_size): # randomly fetch batch
-        random_batch.append(data[random.randint(0, limit)])
+        random_batch.append(data[random.randint(0, limit-1)])
 
     for npyFile in random_batch: 
         loaded_scene = np.load(npyFile)
