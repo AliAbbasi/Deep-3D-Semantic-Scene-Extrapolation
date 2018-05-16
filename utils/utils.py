@@ -102,12 +102,20 @@ def npy_to_ply(name, input_npy_file):  # the input is a npy file
     output = open(str(name) + ".ply", 'w')
     ply = ""
     ver_num = 0
-    for idx1 in range(output_scene.shape[0]):
-        for idx2 in range(output_scene.shape[1]):
-            for idx3 in range(output_scene.shape[2]):
-                if output_scene[idx1][idx2][idx3] >= 1:
-                    ply = ply + str(idx1) + " " + str(idx2) + " " + str(idx3) + str(
-                        colors[int(output_scene[idx1][idx2][idx3])]) + "\n"
+    if len(output_scene.shape) > 2:
+        for idx1 in range(output_scene.shape[0]):
+            for idx2 in range(output_scene.shape[1]):
+                for idx3 in range(output_scene.shape[2]):
+                    if output_scene[idx1][idx2][idx3] >= 1:
+                        ply = ply + str(idx1) + " " + str(idx2) + " " + str(idx3) + str(
+                            colors[int(output_scene[idx1][idx2][idx3])]) + "\n"
+                        ver_num += 1
+    else:
+        for idx1 in range(output_scene.shape[0]):
+            for idx2 in range(output_scene.shape[1]): 
+                if output_scene[idx1][idx2] >= 1:
+                    ply = ply + str(idx1) + " " + str(idx2) + " 0" + str(
+                        colors[int(output_scene[idx1][idx2])]) + "\n"
                     ver_num += 1
     output.write("ply" + "\n")
     output.write("format ascii 1.0" + "\n")
@@ -395,6 +403,49 @@ def fetch_random_batch(directory, bs):
 
 #====================================================================================================================
 
+def project_on_2D(npyFile):
+    scene = npy_cutter(np.load(npyFile), [84, 44, 84])
+    scene2D = np.zeros((84, 84))
+    
+    for x in range(84):
+        for y in range(84):
+            topVoxel = np.argmax(scene[x, :, y]) 
+            scene2D[x, y] = scene[x, topVoxel, y] 
+        
+    np.save('house_2d/' + str(npyFile[8:-4]) + ".npy", scene2D)
+    
+#====================================================================================================================
+
+def project_on_2D_main():   
+    index = 0
+    
+    batch_size = 50
+    p          = Pool(batch_size)
+    batchArr   = []
+    counter    = 0 
+
+    #50 by 50
+    for npyFile in glob.glob('house_2/*.npy'):
+        index += 1
+        batch = [] 
+        
+        if counter < batch_size:    
+            batchArr.append(npyFile)
+            counter += 1 
+        else:
+            counter = 0
+            batch.append(p.map(project_on_2D, batchArr))
+            batchArr = [] 
+            batchArr.append(npyFile)  
+            counter += 1
+            print (index)
+    
+    #1 by 1 
+    for npyFile in batchArr:    
+        project_on_2D(npyFile)
+
+#====================================================================================================================
+
 if __name__ == '__main__':
     # load_time_test()
     # scene_load_and_visualize_test() 
@@ -403,4 +454,5 @@ if __name__ == '__main__':
     # reduce_classes_to_13_main() 
     # fetch_test_set()
     # print len(fetch_random_batch('test_data/', 64))
+    project_on_2D_main()
     pass 
