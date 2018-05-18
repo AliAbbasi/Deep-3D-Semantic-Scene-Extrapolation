@@ -17,9 +17,9 @@ scene_shape          = [84, 84]
 halfed_scene_shape   = scene_shape[1] / 2 
 directory            = 'pixelcnn_v1'
 to_train             = True
-to_restore           = False
+to_restore           = True
 show_accuracy        = True
-show_accuracy_step   = 500
+show_accuracy_step   = 50
 save_model           = True
 save_model_step      = 3000
 visualize_scene      = True
@@ -417,7 +417,7 @@ if __name__ == '__main__':
                 train_cost.append(cost) 
             
             # -------------- prints --------------
-            if step%1 == 0: 
+            if step%10 == 0: 
                 logging.info("%s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
                 print       ("%s , S:%3g , lr:%g , accu1: %4.3g , accu2: %4.3g , Cost: %2.3g "% ( str(datetime.datetime.now().time())[:-7], step, learning_rate, accu1tr, accu2tr, cost ))
             
@@ -428,12 +428,12 @@ if __name__ == '__main__':
                 train_accu2.append(accu2tr) 
                 
                 # valid accuray
-                v_x_batch, v_y_batch = fetch_x_y(test_data, len(test_data)) 
-                accu1v, accu2v = accuFun(sess, v_x_batch, v_y_batch, batch_size)  
-                valid_accu1.append(accu1v)
-                valid_accu2.append(accu2v)
-                logging.info("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
-                print       ("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
+                # v_x_batch, v_y_batch = fetch_x_y(test_data, len(test_data)) 
+                # accu1v, accu2v = accuFun(sess, v_x_batch, v_y_batch, batch_size)  
+                # valid_accu1.append(accu1v)
+                # valid_accu2.append(accu2v)
+                # logging.info("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
+                # print       ("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
                 
             # -------------- save mode, write cost and accuracy --------------  
             if step % save_model_step == 0 and save_model: 
