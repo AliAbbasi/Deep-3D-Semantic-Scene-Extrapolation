@@ -22,7 +22,7 @@ scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2  
 directory            = 'hybrid_model'
 to_train             = True
-to_restore           = False
+to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -36,10 +36,9 @@ train_2d_directory   = 'house_2d/'
 test_2d_directory    = 'house_2d/'
 max_iter             = 50000
 learning_rate        = 0.00005
-batch_size           = 16 
-
-cardinality = 8 # how many split  
-blocks = 3 # res_block  (split + transition)
+batch_size           = 16  
+cardinality          = 8 # how many split  
+blocks               = 3 # res_block (split + transition)
 
 logging.basicConfig(filename=str(directory)+'.log', level=logging.DEBUG) 
 
@@ -410,22 +409,22 @@ class ConvNet(object):
         out_2d_3d = conv2d(conv_r5_1, self.params_2d_3d_w_['w13'], self.params_2d_3d_b_['b13'], "out_2d_3d")
         out_2d_3d = tf.transpose(out_2d_3d, perm=[0, 1, 3, 2])
         
-        print out_2d_3d.get_shape()    # 84 616 42
+        # print out_2d_3d.get_shape()    # 84 616 42
         
         #---convert score to 3d scene -----------------------------------------------------------------------------------------------------------------
         
         out_2d_3d_r  = tf.reshape(out_2d_3d, [-1, 84, 44, 14, 42] )
         out_2d_3d_r  = tf.argmax (out_2d_3d_r, 3) 
         out_2d_3d_r  = tf.cast   (out_2d_3d_r, tf.float32) 
-        print out_2d_3d_r.get_shape()
+        # print out_2d_3d_r.get_shape()
         out_2d_3d_r  = tf.reshape(out_2d_3d_r, [-1, 84, 44, 42])
         
-        print se_cnn_out.get_shape() # 84 44 588 
+        # print se_cnn_out.get_shape() # 84 44 588 
         
         se_cnn_out_r  = tf.reshape(se_cnn_out, [-1, 84, 44, 42, 14] )
         se_cnn_out_r  = tf.argmax (se_cnn_out_r, 4) 
         se_cnn_out_r  = tf.cast   (se_cnn_out_r, tf.float32) 
-        print se_cnn_out_r.get_shape()
+        # print se_cnn_out_r.get_shape()
         se_cnn_out_r  = tf.reshape(se_cnn_out_r, [-1, 84, 44, 42])
         
         # sys.exit(0)
@@ -601,35 +600,45 @@ def show_result(sess):
     
     bs = 0  
     trData, trLabel = [], [] 
-    batch_arr = []
-    test_data = utils.fetch_random_batch(test_directory, batch_size)
+    batch_arr    = []
+    batch_arr_2d = []
+    test_data = utils.fetch_random_batch(train_directory, batch_size)
     
     for test in test_data:   
+        batch_arr_2d.append(np.load(str(test)[:7] + "d" + str(test[7:]))) 
+        
         loaded_file = np.load(test)
         batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
         bs += 1   
         
-    batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
-    trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-    trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt     
-    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
-    accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
+    batch_arr    = np.reshape( batch_arr,    ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
+    batch_arr_2d = np.reshape( batch_arr_2d, ( bs, scene_shape[0], scene_shape[2] ))
+    trData    = batch_arr[    :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+    trLabel   = batch_arr[    :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt   
+    trData_2d = batch_arr_2d[ :, 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]  # input 
+    trData    = np.reshape(trData,    (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
+    trData_2d = np.reshape(trData_2d, (-1, scene_shape[0] * halfed_scene_shape))   
+    accu1, accu2 = accuFun(sess, trData, trLabel, trData_2d, bs)     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))
     print       ("A1: %g, A2: %g" % (accu1, accu2))
     
     for item in glob.glob(directory + "/*.ply"):
         os.remove(item)
     
-    for test in test_data: 
-        loaded_file = np.load(test)
+    for i in range(batch_size): 
+        loaded_file = np.load(test_data[i])
         scene = utils.npy_cutter(loaded_file, scene_shape)
-        trData, trLabel = [], []   
+        trData, trLabel = [], []
+        
+        scene_2d = batch_arr_2d[i]
 
-        trData  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
-        trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
+        trData   = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
+        trData_2 = scene_2d[ 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]                   # input 
+        trLabel  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
         
         trData      = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
-        score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
+        trData_2    = np.reshape( trData_2, ( -1, scene_shape[0] * halfed_scene_shape ))  
+        score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2, keepProb: 1.0, phase: False})  
         score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
         score       = np.argmax ( score, 3)     
         score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
@@ -642,7 +651,7 @@ def show_result(sess):
         gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
         gen_scn = np.concatenate((gen_scn, scene), axis=0)
         
-        output = open( directory + "/" + test[10:] + ".ply" , 'w') 
+        output = open( directory + "/" + test_data[i][10:] + ".ply" , 'w') 
         ply       = ""
         numOfVrtc = 0
         for idx1 in range(gen_scn.shape[0]):
@@ -668,8 +677,8 @@ def show_result(sess):
         output.write("end_header"                            + "\n")
         output.write( ply                                          ) 
         output.close()
-        logging.info(test + ".ply" + " is Done!")
-        print       (test + ".ply" + " is Done!") 
+        logging.info(test_data[i] + ".ply" + " is Done!")
+        print       (test_data[i] + ".ply" + " is Done!") 
     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))    
     print       ("A1: %g, A2: %g" % (accu1, accu2))   
@@ -776,8 +785,10 @@ if __name__ == '__main__':
                 train_accu1.append(accu1tr)
                 train_accu2.append(accu2tr) 
                 
+                # TODO: craete test data for 2d
+                
                 # valid accuray
-                # v_x_batch, v_y_batch,  = fetch_x_y(train_data, len(batch_threshold))  # TODO: craete test data for 2d
+                # v_x_batch, v_y_batch,  = fetch_x_y(train_data, len(batch_threshold))  
                 # accu1v, accu2v = accuFun(sess, v_x_batch, v_y_batch, batch_size)  
                 # valid_accu1.append(accu1v)
                 # valid_accu2.append(accu2v)
@@ -794,8 +805,8 @@ if __name__ == '__main__':
                 utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
                 
             # -------------- visualize scenes -------------- 
-            # if step % visualize_scene_step == 0 and visualize_scene:
-                # show_result(sess)
+            if step % visualize_scene_step == 0 and visualize_scene:
+                show_result(sess)
                 
             # --------------------------------------------- 
             step += 1    
