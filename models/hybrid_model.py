@@ -2,14 +2,7 @@
 #====================================================================================================================================================
 
 # 14 category of objects    
-# scene size: 84 x 44 x 84    
-
-# we have 5 set of parameters
-# 1 for normal CNN
-# 2 for generated 2D second partition
-# 3 for map generated 2D to 3D
-# 4 for global feature network
-# 5 for aggregate all of them and genereate final second part scene
+# scene size: 84 x 44 x 84     
 
 #====================================================================================================================================================
 
@@ -28,8 +21,8 @@ classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2  
 directory            = 'hybrid_model'
-to_train             = False
-to_restore           = True
+to_train             = True
+to_restore           = False
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -40,24 +33,35 @@ subset_train         = False
 train_directory      = 'house_2/' 
 test_directory       = 'test_data/'
 train_2d_directory   = 'house_2d/' 
-test_2d_directory       = 'house_2d/'
+test_2d_directory    = 'house_2d/'
 max_iter             = 50000
 learning_rate        = 0.00005
-batch_size           = 32 
+batch_size           = 16 
+
+cardinality = 8 # how many split  
+blocks = 3 # res_block  (split + transition)
 
 logging.basicConfig(filename=str(directory)+'.log', level=logging.DEBUG) 
 
 if not os.path.exists(directory):
     os.makedirs(directory)
     
-train_data = []  
-test_data  = []
+train_data    = []  
+train_data_2d = []  
+test_data     = []
+test_data_2d  = []
 
 for item in glob.glob(train_directory + "*.npy"):
     train_data.append(item)
     
+for item in glob.glob(train_2d_directory + "*.npy"):
+    train_data_2d.append(item)
+    
 for item in glob.glob(test_directory + "*.npy"):
     test_data.append(item)
+    
+for item in glob.glob(test_2d_directory + "*.npy"):
+    test_data_2d.append(item)
 
 batch_threshold = 0
 if subset_train:
@@ -70,52 +74,111 @@ else:
 class ConvNet(object):
 
     def paramsFun(self): 
-        params_w = {
-                    'w1'   : tf.Variable(tf.truncated_normal( [ 7 , 7 , halfed_scene_shape , 64               ], stddev = 0.01 )),   
-                    'w2'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w3'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),
-                    'w4'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),   
-                    'w5'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w6'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w7'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),   
-                    'w8'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w9'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w10'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w11'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),   
-                    'w12'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w13'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 64 , 64                               ], stddev = 0.01 )),   
-                    'w14'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),   
-                    'w15'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w16'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w17'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),   
-                    'w18'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , 64                               ], stddev = 0.01 )),  
-                    'w19'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),   
-                    'wOut' : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , classes_count*halfed_scene_shape ], stddev = 0.01 ))
+        params_cnn_w = {
+                    'w1'   : tf.Variable(tf.truncated_normal( [ 7 , 7 , halfed_scene_shape , 42               ], stddev = 0.01 )),   
+                    'w2'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42                               ], stddev = 0.01 )),  
+                    'w3'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42                               ], stddev = 0.01 )),
+                    'w4'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42                               ], stddev = 0.01 )),   
+                    'w5'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42                               ], stddev = 0.01 )),  
+                    'w6'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42                               ], stddev = 0.01 )),  
+                    'w7'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42                               ], stddev = 0.01 )),   
+                    'w8'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42                               ], stddev = 0.01 )),  
+                    'w9'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42                               ], stddev = 0.01 )),  
+                    'w10'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42                               ], stddev = 0.01 )),  
+                    'w11'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42                               ], stddev = 0.01 )),   
+                    'w12'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42                               ], stddev = 0.01 )),  
+                    'w13'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42                               ], stddev = 0.01 )),   
+                    'w14'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42                               ], stddev = 0.01 )),   
+                    'w15'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 42 , 42                               ], stddev = 0.01 )),  
+                    'w16'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42                               ], stddev = 0.01 )),  
+                    'w17'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42                               ], stddev = 0.01 )),   
+                    'w18'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 42 , 42                               ], stddev = 0.01 )),  
+                    'w19'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42                               ], stddev = 0.01 )),   
+                    'wOut' : tf.Variable(tf.truncated_normal( [ 1 , 1 , 42 , classes_count*halfed_scene_shape ], stddev = 0.01 ))
                    } 
-        params_b = {
-                    'b1'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
-                    'b2'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
-                    'b3'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b4'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b5'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b6'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b7'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b8'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b9'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b10'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b11'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b12'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b13'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b14'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b15'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b16'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b17'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b18'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
-                    'b19'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
+        params_cnn_b = {
+                    'b1'   : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )),  
+                    'b2'   : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )),  
+                    'b3'   : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b4'   : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b5'   : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b6'   : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b7'   : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b8'   : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b9'   : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b10'  : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b11'  : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b12'  : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b13'  : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b14'  : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b15'  : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b16'  : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b17'  : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b18'  : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
+                    'b19'  : tf.Variable(tf.truncated_normal( [ 42                               ], stddev = 0.01 )), 
                     'bOut' : tf.Variable(tf.truncated_normal( [ classes_count*halfed_scene_shape ], stddev = 0.01 ))
                    } 
-                   
-        return params_w, params_b
+        params_pix_w = {
+                    'w1'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 1  , 16 ], stddev = 0.01 )),  
+                    'w2'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 16 , 32 ], stddev = 0.01 )),  
+                    'w3'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 32 , 16 ], stddev = 0.01 )),
+                    'w4'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 16 , 16 ], stddev = 0.01 )),  
+                    'w5'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 16 , 32 ], stddev = 0.01 )),  
+                    'w6'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 32 , 32 ], stddev = 0.01 )),  
+                    'w7'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 32 , 16 ], stddev = 0.01 )),  
+                    'w8'   : tf.Variable(tf.truncated_normal( [ 1 , 1 , 16 , 32 ], stddev = 0.01 )),  
+                    'w9'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 32 , 32 ], stddev = 0.01 )),  
+                    'w10'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 32 , 16 ], stddev = 0.01 )),  
+                    'w11'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 16 , 32 ], stddev = 0.01 )),   
+                    'w12'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 32 , 16 ], stddev = 0.01 )),  
+                    'w13'  : tf.Variable(tf.truncated_normal( [ 1 , 1 , 16 , classes_count ], stddev = 0.01 ))
+                   } 
+        params_pix_b = {
+                    'b1'   : tf.Variable(tf.truncated_normal( [ 16 ], stddev = 0.01 )),   
+                    'b2'   : tf.Variable(tf.truncated_normal( [ 32 ], stddev = 0.01 )),  
+                    'b3'   : tf.Variable(tf.truncated_normal( [ 16 ], stddev = 0.01 )), 
+                    'b4'   : tf.Variable(tf.truncated_normal( [ 16 ], stddev = 0.01 )),  
+                    'b5'   : tf.Variable(tf.truncated_normal( [ 32 ], stddev = 0.01 )), 
+                    'b6'   : tf.Variable(tf.truncated_normal( [ 32 ], stddev = 0.01 )), 
+                    'b7'   : tf.Variable(tf.truncated_normal( [ 16 ], stddev = 0.01 )),  
+                    'b8'   : tf.Variable(tf.truncated_normal( [ 32 ], stddev = 0.01 )), 
+                    'b9'   : tf.Variable(tf.truncated_normal( [ 32 ], stddev = 0.01 )), 
+                    'b10'  : tf.Variable(tf.truncated_normal( [ 16 ], stddev = 0.01 )),  
+                    'b11'  : tf.Variable(tf.truncated_normal( [ 32 ], stddev = 0.01 )), 
+                    'b12'  : tf.Variable(tf.truncated_normal( [ 16 ], stddev = 0.01 )), 
+                    'b13'  : tf.Variable(tf.truncated_normal( [ classes_count ], stddev = 0.01 ))
+                   }    
+        params_2d_3d_w = {
+                    'w1'   : tf.Variable(tf.truncated_normal( [ 7 , 7 , 1  , 42 ], stddev = 0.01 )),  
+                    'w2'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42 ], stddev = 0.01 )),  
+                    'w3'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42 ], stddev = 0.01 )),
+                    'w4'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42 ], stddev = 0.01 )),  
+                    'w5'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42 ], stddev = 0.01 )),  
+                    'w6'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42 ], stddev = 0.01 )),  
+                    'w7'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42 ], stddev = 0.01 )),  
+                    'w8'   : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42 ], stddev = 0.01 )),  
+                    'w9'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42 ], stddev = 0.01 )),  
+                    'w10'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42 ], stddev = 0.01 )),  
+                    'w11'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , 42 ], stddev = 0.01 )),   
+                    'w12'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 42 , 42 ], stddev = 0.01 )),  
+                    'w13'  : tf.Variable(tf.truncated_normal( [ 5 , 5 , 42 , classes_count*scene_shape[1] ], stddev = 0.01 ))
+                   } 
+        params_2d_3d_b = {
+                    'b1'   : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )),   
+                    'b2'   : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )),  
+                    'b3'   : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )), 
+                    'b4'   : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )),  
+                    'b5'   : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )), 
+                    'b6'   : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )), 
+                    'b7'   : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )),  
+                    'b8'   : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )), 
+                    'b9'   : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )), 
+                    'b10'  : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )),  
+                    'b11'  : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )), 
+                    'b12'  : tf.Variable(tf.truncated_normal( [ 42 ], stddev = 0.01 )), 
+                    'b13'  : tf.Variable(tf.truncated_normal( [ classes_count*scene_shape[1] ], stddev = 0.01 ))
+                   }
+        return params_cnn_w, params_cnn_b, params_pix_w, params_pix_b, params_2d_3d_w, params_2d_3d_b
 
     #=================================================================================================================================================
 
@@ -129,59 +192,256 @@ class ConvNet(object):
                 
         #---------------------------------------------------------------------------------------------------------------------------------------------
         
-        def maxpool2d(x, k=2):
-            return tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME')
+        def dilated_conv2d(x, w, b, name="d_conv2d", d_rate=1):
+            with tf.name_scope(name): 
+                x = tf.nn.convolution(x, w, padding='SAME', strides=[1,1], dilation_rate=[d_rate, d_rate], name=name)
+                x = tf.nn.bias_add(x, b) 
+                return x 
+        
+        #--------------------------------------------------------------------------------------------------------------------------------------------- 
+    
+        def conv_layer(input, filter, kernel, stride, padding='SAME', layer_name="conv"):
+            with tf.name_scope(layer_name):
+                network = tf.layers.conv2d(inputs=input, use_bias=False, filters=filter, kernel_size=kernel, strides=stride, padding=padding)
+                return network
+                
+        def first_layer(x, scope):
+            with tf.name_scope(scope) :
+                x = conv_layer(x, filter=64, kernel=[3, 3], stride=1, layer_name=scope+'_conv1')
+                x = tf.layers.batch_normalization(x)
+                x = tf.nn.relu(x) 
+                return x
+        
+        def transform_layer(x, stride, scope):
+            with tf.name_scope(scope) :
+                x = conv_layer(x, filter=64, kernel=[1,1], stride=stride, layer_name=scope+'_conv1') 
+                x = tf.layers.batch_normalization(x)
+                x = tf.nn.relu(x) 
+                
+                x = conv_layer(x, filter=64, kernel=[3,3], stride=1, layer_name=scope+'_conv2')
+                x = tf.layers.batch_normalization(x)
+                x = tf.nn.relu(x)
+                return x
+
+        def transition_layer(x, out_dim, scope):
+            with tf.name_scope(scope):
+                x = conv_layer(x, filter=out_dim, kernel=[1,1], stride=1, layer_name=scope+'_conv1')
+                x = tf.layers.batch_normalization(x)  
+                return x
+
+        def split_layer(input_x, stride, layer_name):
+            with tf.name_scope(layer_name) :
+                layers_split = list()
+                for i in range(cardinality) :
+                    splits = transform_layer(input_x, stride=stride, scope=layer_name + '_splitN_' + str(i))
+                    layers_split.append(splits)
+
+                return tf.concat(layers_split, axis=3)
+
+        def residual_layer(input_x, out_dim, layer_num, res_block=blocks): 
+            for i in range(res_block): 
+                input_dim = int(np.shape(input_x)[-1])
+                
+                flag = False
+                stride = 1
+                x = split_layer(input_x, stride=stride, layer_name='split_layer_'+layer_num+'_'+str(i))
+                x = transition_layer(x, out_dim=out_dim, scope='trans_layer_'+layer_num+'_'+str(i))
+                
+                input_x = tf.nn.relu(x + input_x)
+
+            return input_x 
         
         #---------------------------------------------------------------------------------------------------------------------------------------------
         
-        self.x_   = tf.reshape(x, shape = [-1, scene_shape[0], scene_shape[1], halfed_scene_shape]) 
+        def conv2d_pix(x, w, b, name="conv_biased", strides=1, mask_type='B'):
+            with tf.name_scope(name):
+            
+                if mask_type != None: 
+                    kh, kw, Cin, Cout = w.shape  
+                    kh, kw, Cin, Cout = int(kh), int(kw), int(Cin), int(Cout)  
+                    mask   = np.ones((kw, kh, Cin, Cout), dtype=np.float32) 
+                    yc, xc = kh // 2, kw // 2 
+                    
+                    mask[ yc+1: ,     : , : , : ] = 0.0
+                    mask[ yc  : , xc+1: , : , : ] = 0.0 
+                    
+                    if mask_type == 'A':
+                        mask[yc, xc, :, :] = 0.
+                        
+                    w *= mask 
+                
+                x = tf.nn.conv2d(x, w, strides=[1, strides, strides, 1], padding='SAME')
+                x = tf.nn.bias_add(x, b)
+                tf.summary.histogram("weights", w)
+                tf.summary.histogram("biases",  b) 
+                return x 
+                
+        #---------------------------------------------------------------------------------------------------------------------------------------------
         
-        conv_1    = conv2d( self.x_, self.params_w_['w1'], self.params_b_['b1'], "conv_1" ) 
+        def maxpool2d(x, k=2):
+            return tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME')
+        
+        #---SE_CNN-------------------------------------------------------------------------------------------------------------------------------------
+        
+        self.x_3d = tf.reshape(x_3d, shape = [-1, scene_shape[0], scene_shape[1], halfed_scene_shape]) 
+        
+        conv_1    = conv2d( self.x_3d, self.params_cnn_w_['w1'], self.params_cnn_b_['b1'], "conv_1" ) 
         
         # Residual Block #1
         conv_r1_1 = tf.layers.batch_normalization(tf.nn.relu( conv_1 )) 
-        conv_r1_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r1_1, self.params_w_['w2'], self.params_b_['b2'], "conv_r1_2" ) ))   
-        conv_r1_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r1_2, self.params_w_['w3'], self.params_b_['b3'], "conv_r1_3" ) )) 
-        conv_r1_4 =                                           conv2d( conv_r1_3, self.params_w_['w4'], self.params_b_['b4'], "conv_r1_4" )  
+        conv_r1_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r1_1, self.params_cnn_w_['w2'], self.params_cnn_b_['b2'], "conv_r1_2" ) ))   
+        conv_r1_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r1_2, self.params_cnn_w_['w3'], self.params_cnn_b_['b3'], "conv_r1_3" ) )) 
+        conv_r1_4 =                                           conv2d( conv_r1_3, self.params_cnn_w_['w4'], self.params_cnn_b_['b4'], "conv_r1_4" )  
         merge_1   = tf.add_n([conv_1, conv_r1_4]) 
         
         # Residual Block #2
         conv_r2_1 = tf.layers.batch_normalization(tf.nn.relu( merge_1 ))  
-        conv_r2_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_1, self.params_w_['w5'], self.params_b_['b5'], "conv_r2_2" ) ))   
-        conv_r2_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_2, self.params_w_['w6'], self.params_b_['b6'], "conv_r2_3" ) )) 
-        conv_r2_4 =                                           conv2d( conv_r2_3, self.params_w_['w7'], self.params_b_['b7'], "conv_r2_4" )  
+        conv_r2_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_1, self.params_cnn_w_['w5'], self.params_cnn_b_['b5'], "conv_r2_2" ) ))   
+        conv_r2_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_2, self.params_cnn_w_['w6'], self.params_cnn_b_['b6'], "conv_r2_3" ) )) 
+        conv_r2_4 =                                           conv2d( conv_r2_3, self.params_cnn_w_['w7'], self.params_cnn_b_['b7'], "conv_r2_4" )  
         merge_2   = tf.add_n([merge_1, conv_r2_4])  
         
         # Residual Block #3
         conv_r3_1 = tf.layers.batch_normalization(tf.nn.relu( merge_2 ))  
-        conv_r3_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_1, self.params_w_['w8'],  self.params_b_['b8'],  "conv_r3_2" ) ))   
-        conv_r3_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_2, self.params_w_['w9'],  self.params_b_['b9'],  "conv_r3_3" ) )) 
-        conv_r3_4 =                                           conv2d( conv_r3_3, self.params_w_['w10'], self.params_b_['b10'], "conv_r3_4" )   
+        conv_r3_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_1, self.params_cnn_w_['w8'],  self.params_cnn_b_['b8'],  "conv_r3_2" ) ))   
+        conv_r3_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_2, self.params_cnn_w_['w9'],  self.params_cnn_b_['b9'],  "conv_r3_3" ) )) 
+        conv_r3_4 =                                           conv2d( conv_r3_3, self.params_cnn_w_['w10'], self.params_cnn_b_['b10'], "conv_r3_4" )   
         merge_3   = tf.add_n([merge_2, conv_r3_4])  
         
         # Residual Block #4
         conv_r4_1 = tf.layers.batch_normalization(tf.nn.relu( merge_3 ))  
-        conv_r4_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_1, self.params_w_['w10'], self.params_b_['b10'], "conv_r4_2" ) ))   
-        conv_r4_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_2, self.params_w_['w11'], self.params_b_['b11'], "conv_r4_3" ) )) 
-        conv_r4_4 =                                           conv2d( conv_r4_3, self.params_w_['w12'], self.params_b_['b12'], "conv_r4_4" )   
+        conv_r4_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_1, self.params_cnn_w_['w10'], self.params_cnn_b_['b10'], "conv_r4_2" ) ))   
+        conv_r4_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_2, self.params_cnn_w_['w11'], self.params_cnn_b_['b11'], "conv_r4_3" ) )) 
+        conv_r4_4 =                                           conv2d( conv_r4_3, self.params_cnn_w_['w12'], self.params_cnn_b_['b12'], "conv_r4_4" )   
         merge_4   = tf.add_n([merge_3, conv_r4_4]) 
         
         # Residual Block #5
         conv_r5_1 = tf.layers.batch_normalization(tf.nn.relu( merge_4 ))  
-        conv_r5_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_1, self.params_w_['w13'], self.params_b_['b13'], "conv_r5_2" ) ))   
-        conv_r5_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_2, self.params_w_['w14'], self.params_b_['b14'], "conv_r5_3" ) )) 
-        conv_r5_4 =                                           conv2d( conv_r5_3, self.params_w_['w15'], self.params_b_['b15'], "conv_r5_4" )   
+        conv_r5_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_1, self.params_cnn_w_['w13'], self.params_cnn_b_['b13'], "conv_r5_2" ) ))   
+        conv_r5_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_2, self.params_cnn_w_['w14'], self.params_cnn_b_['b14'], "conv_r5_3" ) )) 
+        conv_r5_4 =                                           conv2d( conv_r5_3, self.params_cnn_w_['w15'], self.params_cnn_b_['b15'], "conv_r5_4" )   
         merge_5   = tf.add_n([merge_4, conv_r5_4]) 
         
         # Residual Block #6
         conv_r6_1 = tf.layers.batch_normalization(tf.nn.relu( merge_5 ))  
-        conv_r6_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_1, self.params_w_['w16'], self.params_b_['b16'], "conv_r6_2" ) ))   
-        conv_r6_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_2, self.params_w_['w17'], self.params_b_['b17'], "conv_r6_3" ) )) 
-        conv_r6_4 =                                           conv2d( conv_r6_3, self.params_w_['w18'], self.params_b_['b18'], "conv_r6_4" )   
+        conv_r6_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_1, self.params_cnn_w_['w16'], self.params_cnn_b_['b16'], "conv_r6_2" ) ))   
+        conv_r6_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_2, self.params_cnn_w_['w17'], self.params_cnn_b_['b17'], "conv_r6_3" ) )) 
+        conv_r6_4 =                                           conv2d( conv_r6_3, self.params_cnn_w_['w18'], self.params_cnn_b_['b18'], "conv_r6_4" )   
         merge_6   = tf.add_n([merge_5, conv_r6_4]) 
         
-        conv_out  = tf.contrib.layers.flatten(conv2d(merge_6, self.params_w_['wOut'], self.params_b_['bOut'], "conv_out"))     
-        return conv_out
+        se_cnn_out = conv2d(merge_6, self.params_cnn_w_['wOut'], self.params_cnn_b_['bOut'], "conv_out")   
+        
+        #---PixelCNN-----------------------------------------------------------------------------------------------------------------------------------
+        
+        self.x_2d = tf.reshape(x_2d, shape = [-1, scene_shape[0], halfed_scene_shape, 1]) 
+        
+        conv_1    = conv2d_pix( self.x_2d, self.params_pix_w_['w1'], self.params_pix_b_['b1'], "conv_1" , mask_type='A' )
+        
+        # Residual Block #1
+        conv_r1_1 = tf.nn.relu( conv_1 )  
+        conv_r1_2 = tf.nn.relu( conv2d_pix( conv_r1_1, self.params_pix_w_['w2'], self.params_pix_b_['b2'], "conv_r1_2" ) )   
+        conv_r1_3 = tf.nn.relu( conv2d_pix( conv_r1_2, self.params_pix_w_['w3'], self.params_pix_b_['b3'], "conv_r1_3" ) ) 
+        conv_r1_4 =             conv2d_pix( conv_r1_3, self.params_pix_w_['w4'], self.params_pix_b_['b4'], "conv_r1_4" ) 
+
+        merge_1   = tf.add_n([conv_1, conv_r1_4])  
+        
+        # Residual Block #2
+        conv_r2_1 = tf.nn.relu( merge_1 )  
+        conv_r2_2 = tf.nn.relu( conv2d_pix( conv_r2_1, self.params_pix_w_['w5'], self.params_pix_b_['b5'], "conv_r2_2" ) )   
+        conv_r2_3 = tf.nn.relu( conv2d_pix( conv_r2_2, self.params_pix_w_['w6'], self.params_pix_b_['b6'], "conv_r2_3" ) ) 
+        conv_r2_4 =             conv2d_pix( conv_r2_3, self.params_pix_w_['w7'], self.params_pix_b_['b7'], "conv_r2_4" ) 
+        
+        merge_2   = tf.add_n([merge_1, conv_r2_4])  
+        
+        # Residual Block #3
+        conv_r3_1 = tf.nn.relu( merge_2 )  
+        conv_r3_2 = tf.nn.relu( conv2d_pix( conv_r3_1, self.params_pix_w_['w8'],  self.params_pix_b_['b8'],  "conv_r3_2" ) )   
+        conv_r3_3 = tf.nn.relu( conv2d_pix( conv_r3_2, self.params_pix_w_['w9'],  self.params_pix_b_['b9'],  "conv_r3_3" ) ) 
+        conv_r3_4 =             conv2d_pix( conv_r3_3, self.params_pix_w_['w10'], self.params_pix_b_['b10'], "conv_r3_4" )  
+        
+        merge_3   = tf.nn.relu( tf.add_n([merge_2, conv_r3_4]) ) 
+        
+        conv_2    = tf.nn.relu( conv2d_pix( merge_3, self.params_pix_w_['w11'], self.params_pix_b_['b11'], "conv_2" ) )  
+        conv_3    = tf.nn.relu( conv2d_pix( conv_2,  self.params_pix_w_['w12'], self.params_pix_b_['b12'], "conv_3" ) )
+        
+        merge_4   = tf.nn.relu( tf.add_n([merge_3, conv_3]) ) 
+        pix_out   =             conv2d_pix( merge_4,  self.params_pix_w_['w13'], self.params_pix_b_['b13'], "pix_out" ) 
+        
+        # print pix_out.get_shape()  # 84 42 14
+        #---2d_3d----------------------------------------------------------------------------------------------------------------------------------- 
+        
+        pix_out_r  = tf.reshape(pix_out, [-1, 84, 42, 1, 14])
+        pix_out_r  = tf.argmax (pix_out_r, 4) 
+        pix_out_r  = tf.cast   (pix_out_r, tf.float32) 
+        pix_out_r  = tf.reshape(pix_out_r, [-1, 84, 42, 1])
+        
+        conv_1   = conv2d( pix_out_r, self.params_2d_3d_w_['w1'], self.params_2d_3d_b_['b1'], "conv_1" ) 
+        
+        # Residual Block #1
+        conv_r1_1 = tf.layers.batch_normalization(tf.nn.relu( conv_1 )) 
+        conv_r1_2 = tf.layers.batch_normalization(tf.nn.relu(         conv2d( conv_r1_1, self.params_2d_3d_w_['w2'], self.params_2d_3d_b_['b2'], "conv_r1_2"   ) ))   
+        conv_r1_3 = tf.layers.batch_normalization(tf.nn.relu( dilated_conv2d( conv_r1_2, self.params_2d_3d_w_['w3'], self.params_2d_3d_b_['b3'], "conv_r1_3", 2) ))  
+        conv_r1_4 =                                                   conv2d( conv_r1_3, self.params_2d_3d_w_['w4'], self.params_2d_3d_b_['b4'], "conv_r1_4"   )  
+        merge_1   = tf.add_n([conv_1, conv_r1_4]) 
+        
+        # Residual Block #2
+        conv_r2_1 = tf.layers.batch_normalization(tf.nn.relu( merge_1 ))  
+        conv_r2_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_1, self.params_2d_3d_w_['w5'], self.params_2d_3d_b_['b5'], "conv_r2_2" ) ))   
+        conv_r2_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_2, self.params_2d_3d_w_['w6'], self.params_2d_3d_b_['b6'], "conv_r2_3" ) )) 
+        conv_r2_4 =                                           conv2d( conv_r2_3, self.params_2d_3d_w_['w7'], self.params_2d_3d_b_['b7'], "conv_r2_4" )  
+        merge_2   = tf.add_n([conv_1, merge_1, conv_r2_4])  
+        
+        # Residual Block #3
+        conv_r3_1 = tf.layers.batch_normalization(tf.nn.relu( merge_2 ))  
+        conv_r3_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_1, self.params_2d_3d_w_['w8'],  self.params_2d_3d_b_['b8'],  "conv_r3_2" ) ))   
+        conv_r3_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_2, self.params_2d_3d_w_['w9'],  self.params_2d_3d_b_['b9'],  "conv_r3_3" ) )) 
+        conv_r3_4 =                                           conv2d( conv_r3_3, self.params_2d_3d_w_['w10'], self.params_2d_3d_b_['b10'], "conv_r3_4" )   
+        merge_3   = tf.add_n([conv_1, merge_1, merge_2, conv_r3_4])  
+        
+        # Residual Block #4
+        conv_r4_1 = tf.layers.batch_normalization(tf.nn.relu( merge_3 ))  
+        conv_r4_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_1, self.params_2d_3d_w_['w10'], self.params_2d_3d_b_['b10'], "conv_r4_2" ) ))   
+        conv_r4_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_2, self.params_2d_3d_w_['w11'], self.params_2d_3d_b_['b11'], "conv_r4_3" ) )) 
+        conv_r4_4 =                                           conv2d( conv_r4_3, self.params_2d_3d_w_['w12'], self.params_2d_3d_b_['b12'], "conv_r4_4" )   
+        merge_4   = tf.add_n([conv_1, merge_1, merge_2, merge_3, conv_r4_4]) 
+        
+        # Residual Block #5
+        conv_r5_1 = tf.layers.batch_normalization(tf.nn.relu( merge_4 ))  
+        out_2d_3d = conv2d(conv_r5_1, self.params_2d_3d_w_['w13'], self.params_2d_3d_b_['b13'], "out_2d_3d")
+        out_2d_3d = tf.transpose(out_2d_3d, perm=[0, 1, 3, 2])
+        
+        print out_2d_3d.get_shape()    # 84 616 42
+        
+        #---convert score to 3d scene -----------------------------------------------------------------------------------------------------------------
+        
+        out_2d_3d_r  = tf.reshape(out_2d_3d, [-1, 84, 44, 14, 42] )
+        out_2d_3d_r  = tf.argmax (out_2d_3d_r, 3) 
+        out_2d_3d_r  = tf.cast   (out_2d_3d_r, tf.float32) 
+        print out_2d_3d_r.get_shape()
+        out_2d_3d_r  = tf.reshape(out_2d_3d_r, [-1, 84, 44, 42])
+        
+        print se_cnn_out.get_shape() # 84 44 588 
+        
+        se_cnn_out_r  = tf.reshape(se_cnn_out, [-1, 84, 44, 42, 14] )
+        se_cnn_out_r  = tf.argmax (se_cnn_out_r, 4) 
+        se_cnn_out_r  = tf.cast   (se_cnn_out_r, tf.float32) 
+        print se_cnn_out_r.get_shape()
+        se_cnn_out_r  = tf.reshape(se_cnn_out_r, [-1, 84, 44, 42])
+        
+        # sys.exit(0)
+        
+        #---Smoother-----------------------------------------------------------------------------------------------------------------------------------
+        
+        input_smoother = tf.add_n([se_cnn_out_r, out_2d_3d_r]) 
+        
+        res_next_1 = residual_layer(input_smoother, out_dim=42, layer_num='1')
+        res_next_2 = residual_layer(res_next_1,     out_dim=42, layer_num='2')
+        res_next_3 = residual_layer(res_next_2,     out_dim=42, layer_num='3')
+        res_next_4 = residual_layer(res_next_3,     out_dim=42, layer_num='4')
+        
+        smoother_out = conv_layer(res_next_4, filter=classes_count*halfed_scene_shape, kernel=[1,1], stride=1, layer_name="last_conv") 
+        
+        return smoother_out, out_2d_3d, pix_out, se_cnn_out
         
     #---------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -204,26 +464,73 @@ class ConvNet(object):
         
         #----------------------------------------------------------------
         
-        logits = tf.reshape(self.score, [-1, classes_count])
-        labels = tf.reshape(self.y,     [-1               ]) 
+        smoother_out, out_2d_3d, pix_out, se_cnn_out = self.score
         
-        total = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)) 
-        total += tf.reduce_mean(focal_loss(labels, tf.nn.softmax(logits)))
+        #---SE_CNN_LOSS--------------------------------------------------------------- 
+        logits = tf.reshape(se_cnn_out, [-1, classes_count])
+        labels = tf.reshape(self.y_3d,  [-1               ]) 
         
-        for w in self.params_w_:
-            total += tf.nn.l2_loss(self.params_w_[w]) * 0.005 
+        se_cnn_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)) 
+        se_cnn_loss += tf.reduce_mean(focal_loss(labels, tf.nn.softmax(logits)))
+        
+        for w in self.params_cnn_w_:
+            se_cnn_loss += tf.nn.l2_loss(self.params_cnn_w_[w]) * 0.05 
             
         # penalty term
-        logits       = tf.reshape(self.score, [-1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count])
-        labels       = tf.reshape(self.y,     [-1, scene_shape[0], scene_shape[1], halfed_scene_shape               ])
+        logits       = tf.reshape(se_cnn_out, [-1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count])
+        labels       = tf.reshape(self.y_3d,  [-1, scene_shape[0], scene_shape[1], halfed_scene_shape               ])
         split_logits = tf.split(axis=3, num_or_size_splits=halfed_scene_shape, value=logits)
         split_labels = tf.split(axis=3, num_or_size_splits=halfed_scene_shape, value=labels)
         
         for i in range(1,len(split_logits)):
-            total += tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=split_logits[i], labels=split_labels[i-1]))
+            se_cnn_loss += tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=split_logits[i], labels=split_labels[i-1]))
             
-        return total
+        #---PixelCNN_LOSS--------------------------------------------------------------- 
+        logits = tf.reshape(pix_out,   [-1, classes_count])
+        labels = tf.reshape(self.y_2d, [-1]) 
         
+        pixelcnn_loss  = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits( logits=logits, labels=labels ))
+        pixelcnn_loss += tf.reduce_mean(focal_loss(labels, tf.nn.softmax(logits)))
+        
+        for w in self.params_pix_w_ :
+            pixelcnn_loss += tf.nn.l2_loss(self.params_pix_w_[w]) * 0.05
+
+        #---2d_3d_LOSS--------------------------------------------------------------- 
+        logits = tf.reshape(out_2d_3d, [-1, classes_count])
+        labels = tf.reshape(self.y_3d, [-1               ]) 
+        
+        loss_2d_3d = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)) 
+        # loss_2d_3d += tf.reduce_mean(focal_loss(labels, tf.nn.softmax(logits)))
+        
+        for w in self.params_2d_3d_w_:
+            loss_2d_3d += tf.nn.l2_loss(self.params_2d_3d_w_[w]) * 0.05 
+            
+        # penalty term
+        logits       = tf.reshape(out_2d_3d, [-1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count])
+        labels       = tf.reshape(self.y_3d, [-1, scene_shape[0], scene_shape[1], halfed_scene_shape               ])
+        split_logits = tf.split(axis=3, num_or_size_splits=halfed_scene_shape, value=logits)
+        split_labels = tf.split(axis=3, num_or_size_splits=halfed_scene_shape, value=labels)
+        
+        for i in range(1,len(split_logits)):
+            loss_2d_3d += tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=split_logits[i], labels=split_labels[i-1]))
+            
+        #---Smoother_LOSS---------------------------------------------------------------
+        logits = tf.reshape(smoother_out, [-1, classes_count])
+        labels = tf.reshape(self.y_3d,  [-1               ]) 
+        
+        smoother_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)) 
+        # smoother_loss += tf.reduce_mean(focal_loss(labels, tf.nn.softmax(logits)))
+        
+        # penalty term
+        logits       = tf.reshape(smoother_out, [-1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count])
+        labels       = tf.reshape(self.y_3d, [-1, scene_shape[0], scene_shape[1], halfed_scene_shape               ])
+        split_logits = tf.split(axis=3, num_or_size_splits=halfed_scene_shape, value=logits)
+        split_labels = tf.split(axis=3, num_or_size_splits=halfed_scene_shape, value=labels)
+        
+        for i in range(1,len(split_logits)):
+            smoother_loss += tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=split_logits[i], labels=split_labels[i-1]))
+        
+        return (smoother_loss + loss_2d_3d + pixelcnn_loss + se_cnn_loss)
     #------------------------------------------------------------------------------------------------------------------------------------------------    
     
     def updateFun(self):
@@ -231,25 +538,29 @@ class ConvNet(object):
         
    #--------------------------------------------------------------------------------------------------------------------------------------------------
 
-    def __init__(self, x, y, lr, keepProb, phase):                    
-        self.x_        = x
-        self.y         = y
-        self.lr        = lr 
-        self.keepProb  = keepProb
-        self.phase     = phase 
+    def __init__(self, x_3d, x_2d, y_3d, y_2d, lr, keepProb, phase):                    
+        self.x_3d        = x_3d
+        self.x_2d        = x_2d
+        self.y_3d        = y_3d
+        self.y_2d        = y_2d
+        self.lr          = lr 
+        self.keepProb    = keepProb
+        self.phase       = phase 
 
-        [self.params_w_, self.params_b_] = ConvNet.paramsFun(self) # initialization and packing the parameters
-        self.score                       = ConvNet.scoreFun (self) # Computing the score function     
-        self.cost                        = ConvNet.costFun  (self) # Computing the cost function 
-        self.update                      = ConvNet.updateFun(self) # Computing the update function 
+        [self.params_cnn_w_,  self.params_cnn_b_,
+        self.params_pix_w_,   self.params_pix_b_,
+        self.params_2d_3d_w_, self.params_2d_3d_b_] = ConvNet.paramsFun(self)  
+        self.score                                  = ConvNet.scoreFun (self)  
+        self.cost                                   = ConvNet.costFun  (self)  
+        self.update                                 = ConvNet.updateFun(self)  
      
 #=================================================================================================================================================== 
 
-def accuFun(sess, trData, trLabel, batch_size):
+def accuFun(sess, trData, trLabel, trData_2d, batch_size):
 
-    score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
-    score   = np.reshape( score,   ( batch_size, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ) )  
-    trLabel = np.reshape( trLabel, ( batch_size, scene_shape[0], scene_shape[1], halfed_scene_shape ))   
+    score, _, _, _ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d: trData_2d, keepProb: 1.0, phase: False})  
+    score          = np.reshape( score,   ( batch_size, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ) )  
+    trLabel        = np.reshape( trLabel, ( batch_size, scene_shape[0], scene_shape[1], halfed_scene_shape ))   
     
     totalAccuOveral   = 0.0
     totalAccuOccupied = 0.0
@@ -317,13 +628,13 @@ def show_result(sess):
         trData  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
         trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
         
-        trData  = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
-        score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
-        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
-        score   = np.argmax ( score, 3)     
-        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
-        score   = score[0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape]            
-        trData  = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
+        trData      = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
+        score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
+        score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
+        score       = np.argmax ( score, 3)     
+        score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
+        score       = score[0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape]            
+        trData      = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
         
         gen_scn = np.concatenate((trData, score), axis=2) 
         
@@ -366,39 +677,47 @@ def show_result(sess):
 #===================================================================================================================================================
 
 def fetch_x_y(data, limit):
-    batch, x, y = [], [], []  
-    random_batch = []
+    batch, x, y          = [], [], []  
+    batch_2d, x_2d, y_2d = [], [], []  
+    random_batch    = [] 
+    
     for i in xrange(batch_size): # randomly fetch batch
-        random_batch.append(data[random.randint(0, limit-1)])
+        rand_index = random.randint(0, limit-1)
+        random_batch.append(data[rand_index])
+        batch_2d.append(np.load(train_data_2d[rand_index]))
 
     for npyFile in random_batch: 
         loaded_scene = np.load(npyFile)
         scene = utils.npy_cutter(loaded_scene, scene_shape) 
-        batch.append(scene)
+        batch.append(scene) 
         
     batch = np.reshape( batch, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))    
-
     x = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-    y = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt  
-
+    y = batch[ : , 0:scene_shape[0] , 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt   
     x = np.reshape( x, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
     y = np.reshape( y, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))
+    
+    batch_2d = np.reshape( batch_2d, ( -1, scene_shape[0], scene_shape[2] ))    
+    x_2d = batch_2d[ : , 0:scene_shape[0] , 0:halfed_scene_shape ]               # input 
+    y_2d = batch_2d[ : , 0:scene_shape[0] , halfed_scene_shape:scene_shape[2] ]  # gt   
+    x_2d = np.reshape( x_2d, ( -1, scene_shape[0] * halfed_scene_shape ))
+    y_2d = np.reshape( y_2d, ( -1, scene_shape[0] * halfed_scene_shape ))
 
-    return x, y
+    return x, y, x_2d, y_2d
 
 #===================================================================================================================================================
   
 if __name__ == '__main__':
 
-    input         = scene_shape[0] * scene_shape[1] * halfed_scene_shape
-    out           = scene_shape[0] * scene_shape[1] * halfed_scene_shape  
-    x             = tf.placeholder(tf.float32, [ None, input ])
-    y             = tf.placeholder(tf.int32  , [ None, out   ])   
+    x_3d          = tf.placeholder(tf.float32, [ None, scene_shape[0] * scene_shape[1] * halfed_scene_shape ])
+    x_2d          = tf.placeholder(tf.float32, [ None, scene_shape[0] * halfed_scene_shape ])
+    y_3d          = tf.placeholder(tf.int32,   [ None, scene_shape[0] * scene_shape[1] * halfed_scene_shape ])   
+    y_2d          = tf.placeholder(tf.int32,   [ None, scene_shape[0] * halfed_scene_shape ])
     lr            = tf.placeholder(tf.float32                 )   
     keepProb      = tf.placeholder(tf.float32                 )
     phase         = tf.placeholder(tf.bool                    )
     dropOut       = 0.5
-    ConvNet_class = ConvNet(x, y, lr, keepProb, phase)
+    ConvNet_class = ConvNet(x_3d, x_2d, y_3d, y_2d, lr, keepProb, phase) 
     init_var      = tf.global_variables_initializer() 
     saver         = tf.train.Saver() 
     
@@ -429,7 +748,7 @@ if __name__ == '__main__':
             sys.exit(0)
         
         # -------------- train phase --------------
-        step         = 1  
+        step         = 0 
         train_cost   = []
         valid_cost   = []
         train_accu1  = []
@@ -440,10 +759,10 @@ if __name__ == '__main__':
         
         while(step < max_iter):    
         
-            x_batch, y_batch = fetch_x_y(train_data, batch_threshold)  
+            x_batch, y_batch, x_batch_2d, y_batch_2d = fetch_x_y(train_data, batch_threshold)  
             
             with tf.control_dependencies(extra_update_ops):  
-                cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x: x_batch, y: y_batch, lr: learning_rate, keepProb: dropOut, phase: True})    
+                cost, _ = sess.run([ConvNet_class.cost, ConvNet_class.update], feed_dict={x_3d: x_batch, y_3d: y_batch, x_2d: x_batch_2d, y_2d:y_batch_2d, lr: learning_rate, keepProb: dropOut, phase: True})    
                 train_cost.append(cost) 
             
             # -------------- prints --------------
@@ -453,17 +772,17 @@ if __name__ == '__main__':
             
             # -------------- accuracy calculator --------------  
             if step % show_accuracy_step == 0 and show_accuracy:   
-                accu1tr, accu2tr = accuFun(sess, x_batch, y_batch, batch_size)  
+                accu1tr, accu2tr = accuFun(sess, x_batch, y_batch, x_batch_2d, batch_size)  
                 train_accu1.append(accu1tr)
                 train_accu2.append(accu2tr) 
                 
                 # valid accuray
-                v_x_batch, v_y_batch = fetch_x_y(test_data, len(test_data)) 
-                accu1v, accu2v = accuFun(sess, v_x_batch, v_y_batch, batch_size)  
-                valid_accu1.append(accu1v)
-                valid_accu2.append(accu2v)
-                logging.info("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
-                print       ("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
+                # v_x_batch, v_y_batch,  = fetch_x_y(train_data, len(batch_threshold))  # TODO: craete test data for 2d
+                # accu1v, accu2v = accuFun(sess, v_x_batch, v_y_batch, batch_size)  
+                # valid_accu1.append(accu1v)
+                # valid_accu2.append(accu2v)
+                # logging.info("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
+                # print       ("accu1v: %4.3g , accu2v: %4.3g "% ( accu1v, accu2v ))
                 
             # -------------- save mode, write cost and accuracy --------------  
             if step % save_model_step == 0 and save_model: 
@@ -475,8 +794,8 @@ if __name__ == '__main__':
                 utils.write_cost_accuray_plot(directory, train_cost, valid_cost, train_accu1, train_accu2, valid_accu1, valid_accu2) 
                 
             # -------------- visualize scenes -------------- 
-            if step % visualize_scene_step == 0 and visualize_scene:
-                show_result(sess)
+            # if step % visualize_scene_step == 0 and visualize_scene:
+                # show_result(sess)
                 
             # --------------------------------------------- 
             step += 1    
