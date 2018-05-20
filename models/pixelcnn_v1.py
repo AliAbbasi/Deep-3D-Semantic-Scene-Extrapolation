@@ -16,7 +16,7 @@ classes_count        = 14
 scene_shape          = [84, 84] 
 halfed_scene_shape   = scene_shape[1] / 2 
 directory            = 'pixelcnn_v1'
-to_train             = True
+to_train             = False
 to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 50
@@ -300,11 +300,11 @@ def show_result(sess):
         
         gen_scn = np.concatenate((trData, score), axis=1) 
         
-        # empty_space = np.zeros((10, scene_shape[1], scene_shape[1]))
-        # gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
-        # gen_scn = np.concatenate((gen_scn, scene), axis=0)
+        empty_space = np.zeros((10, scene_shape[0])) 
+        gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
+        gen_scn = np.concatenate((gen_scn, scene), axis=0)
         
-        output = open( directory + "/" + test[10:] + ".ply" , 'w') 
+        output = open( directory + "/" + test[9:] + ".ply" , 'w') 
         ply       = ""
         numOfVrtc = 0
         for idx1 in range(gen_scn.shape[0]):
