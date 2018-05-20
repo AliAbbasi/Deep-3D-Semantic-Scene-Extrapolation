@@ -70,6 +70,14 @@ else:
     
 #=====================================================================================================================================================
 
+def count_params():
+    "print number of trainable variables"
+    size = lambda v: reduce(lambda x, y: x*y, v.get_shape().as_list())
+    n = sum(size(v) for v in tf.trainable_variables())
+    print "Model size: %dK" % (n/1000,)
+
+#=====================================================================================================================================================
+
 class ConvNet(object):
 
     def paramsFun(self): 
@@ -183,6 +191,8 @@ class ConvNet(object):
 
     def scoreFun(self): 
     
+        #---------------------------------------------------------------------------------------------------------------------------------------------
+        
         def conv2d(x, w, b, name="conv_biased", strides=1):
             with tf.name_scope(name):
                 x = tf.nn.conv2d(x, w, strides=[1, strides, strides, 1], padding='SAME')
@@ -204,12 +214,16 @@ class ConvNet(object):
                 network = tf.layers.conv2d(inputs=input, use_bias=False, filters=filter, kernel_size=kernel, strides=stride, padding=padding)
                 return network
                 
+        #---------------------------------------------------------------------------------------------------------------------------------------------
+        
         def first_layer(x, scope):
             with tf.name_scope(scope) :
                 x = conv_layer(x, filter=64, kernel=[3, 3], stride=1, layer_name=scope+'_conv1')
                 x = tf.layers.batch_normalization(x)
                 x = tf.nn.relu(x) 
                 return x
+        
+        #---------------------------------------------------------------------------------------------------------------------------------------------
         
         def transform_layer(x, stride, scope):
             with tf.name_scope(scope) :
@@ -222,12 +236,16 @@ class ConvNet(object):
                 x = tf.nn.relu(x)
                 return x
 
+        #---------------------------------------------------------------------------------------------------------------------------------------------
+        
         def transition_layer(x, out_dim, scope):
             with tf.name_scope(scope):
                 x = conv_layer(x, filter=out_dim, kernel=[1,1], stride=1, layer_name=scope+'_conv1')
                 x = tf.layers.batch_normalization(x)  
                 return x
 
+        #---------------------------------------------------------------------------------------------------------------------------------------------
+       
         def split_layer(input_x, stride, layer_name):
             with tf.name_scope(layer_name) :
                 layers_split = list()
@@ -236,7 +254,9 @@ class ConvNet(object):
                     layers_split.append(splits)
 
                 return tf.concat(layers_split, axis=3)
-
+                
+        #---------------------------------------------------------------------------------------------------------------------------------------------
+        
         def residual_layer(input_x, out_dim, layer_num, res_block=blocks): 
             for i in range(res_block): 
                 input_dim = int(np.shape(input_x)[-1])
@@ -270,9 +290,7 @@ class ConvNet(object):
                     w *= mask 
                 
                 x = tf.nn.conv2d(x, w, strides=[1, strides, strides, 1], padding='SAME')
-                x = tf.nn.bias_add(x, b)
-                tf.summary.histogram("weights", w)
-                tf.summary.histogram("biases",  b) 
+                x = tf.nn.bias_add(x, b) 
                 return x 
                 
         #---------------------------------------------------------------------------------------------------------------------------------------------
@@ -729,7 +747,7 @@ if __name__ == '__main__':
     ConvNet_class = ConvNet(x_3d, x_2d, y_3d, y_2d, lr, keepProb, phase) 
     init_var      = tf.global_variables_initializer() 
     saver         = tf.train.Saver() 
-    
+    count_params()
     # log_device_placement: shows the log of which task will work on which device.
     # allow_soft_placement: TF choose automatically the available device
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:  
