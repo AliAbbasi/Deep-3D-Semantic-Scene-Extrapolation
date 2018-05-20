@@ -22,7 +22,7 @@ scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2  
 directory            = 'hybrid_model'
 to_train             = True
-to_restore           = True
+to_restore           = False
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -35,7 +35,7 @@ test_directory       = 'test_data/'
 train_2d_directory   = 'house_2d/' 
 test_2d_directory    = 'house_2d/'
 max_iter             = 50000
-learning_rate        = 0.00005
+learning_rate        = 0.000007
 batch_size           = 16  
 cardinality          = 8 # how many split  
 blocks               = 3 # res_block (split + transition)
@@ -384,7 +384,6 @@ class ConvNet(object):
         merge_4   = tf.nn.relu( tf.add_n([merge_3, conv_3]) ) 
         pix_out   =             conv2d_pix( merge_4,  self.params_pix_w_['w13'], self.params_pix_b_['b13'], "pix_out" ) 
         
-        # print pix_out.get_shape()  # 84 42 14
         #---2d_3d----------------------------------------------------------------------------------------------------------------------------------- 
         
         pix_out_r  = tf.reshape(pix_out, [-1, 84, 42, 1, 14])
@@ -403,49 +402,41 @@ class ConvNet(object):
         
         # Residual Block #2
         conv_r2_1 = tf.layers.batch_normalization(tf.nn.relu( merge_1 ))  
-        conv_r2_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_1, self.params_2d_3d_w_['w5'], self.params_2d_3d_b_['b5'], "conv_r2_2" ) ))   
-        conv_r2_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_2, self.params_2d_3d_w_['w6'], self.params_2d_3d_b_['b6'], "conv_r2_3" ) )) 
-        conv_r2_4 =                                           conv2d( conv_r2_3, self.params_2d_3d_w_['w7'], self.params_2d_3d_b_['b7'], "conv_r2_4" )  
+        conv_r2_2 = tf.layers.batch_normalization(tf.nn.relu(         conv2d( conv_r2_1, self.params_2d_3d_w_['w5'], self.params_2d_3d_b_['b5'], "conv_r2_2" ) ))   
+        conv_r2_3 = tf.layers.batch_normalization(tf.nn.relu( dilated_conv2d( conv_r2_2, self.params_2d_3d_w_['w6'], self.params_2d_3d_b_['b6'], "conv_r2_3", 4 ) )) 
+        conv_r2_4 =                                                   conv2d( conv_r2_3, self.params_2d_3d_w_['w7'], self.params_2d_3d_b_['b7'], "conv_r2_4" )  
         merge_2   = tf.add_n([conv_1, merge_1, conv_r2_4])  
         
         # Residual Block #3
         conv_r3_1 = tf.layers.batch_normalization(tf.nn.relu( merge_2 ))  
-        conv_r3_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_1, self.params_2d_3d_w_['w8'],  self.params_2d_3d_b_['b8'],  "conv_r3_2" ) ))   
-        conv_r3_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_2, self.params_2d_3d_w_['w9'],  self.params_2d_3d_b_['b9'],  "conv_r3_3" ) )) 
-        conv_r3_4 =                                           conv2d( conv_r3_3, self.params_2d_3d_w_['w10'], self.params_2d_3d_b_['b10'], "conv_r3_4" )   
+        conv_r3_2 = tf.layers.batch_normalization(tf.nn.relu(         conv2d( conv_r3_1, self.params_2d_3d_w_['w8'],  self.params_2d_3d_b_['b8'],  "conv_r3_2" ) ))   
+        conv_r3_3 = tf.layers.batch_normalization(tf.nn.relu( dilated_conv2d( conv_r3_2, self.params_2d_3d_w_['w9'],  self.params_2d_3d_b_['b9'],  "conv_r3_3", 8 ) )) 
+        conv_r3_4 =                                                   conv2d( conv_r3_3, self.params_2d_3d_w_['w10'], self.params_2d_3d_b_['b10'], "conv_r3_4" )   
         merge_3   = tf.add_n([conv_1, merge_1, merge_2, conv_r3_4])  
         
         # Residual Block #4
         conv_r4_1 = tf.layers.batch_normalization(tf.nn.relu( merge_3 ))  
-        conv_r4_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_1, self.params_2d_3d_w_['w10'], self.params_2d_3d_b_['b10'], "conv_r4_2" ) ))   
-        conv_r4_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_2, self.params_2d_3d_w_['w11'], self.params_2d_3d_b_['b11'], "conv_r4_3" ) )) 
-        conv_r4_4 =                                           conv2d( conv_r4_3, self.params_2d_3d_w_['w12'], self.params_2d_3d_b_['b12'], "conv_r4_4" )   
+        conv_r4_2 = tf.layers.batch_normalization(tf.nn.relu(         conv2d( conv_r4_1, self.params_2d_3d_w_['w10'], self.params_2d_3d_b_['b10'], "conv_r4_2" ) ))   
+        conv_r4_3 = tf.layers.batch_normalization(tf.nn.relu( dilated_conv2d( conv_r4_2, self.params_2d_3d_w_['w11'], self.params_2d_3d_b_['b11'], "conv_r4_3", 16 ) )) 
+        conv_r4_4 =                                                   conv2d( conv_r4_3, self.params_2d_3d_w_['w12'], self.params_2d_3d_b_['b12'], "conv_r4_4" )   
         merge_4   = tf.add_n([conv_1, merge_1, merge_2, merge_3, conv_r4_4]) 
         
         # Residual Block #5
         conv_r5_1 = tf.layers.batch_normalization(tf.nn.relu( merge_4 ))  
         out_2d_3d = conv2d(conv_r5_1, self.params_2d_3d_w_['w13'], self.params_2d_3d_b_['b13'], "out_2d_3d")
-        out_2d_3d = tf.transpose(out_2d_3d, perm=[0, 1, 3, 2])
-        
-        # print out_2d_3d.get_shape()    # 84 616 42
+        out_2d_3d = tf.transpose(out_2d_3d, perm=[0, 1, 3, 2]) 
         
         #---convert score to 3d scene -----------------------------------------------------------------------------------------------------------------
         
         out_2d_3d_r  = tf.reshape(out_2d_3d, [-1, 84, 44, 14, 42] )
         out_2d_3d_r  = tf.argmax (out_2d_3d_r, 3) 
-        out_2d_3d_r  = tf.cast   (out_2d_3d_r, tf.float32) 
-        # print out_2d_3d_r.get_shape()
+        out_2d_3d_r  = tf.cast   (out_2d_3d_r, tf.float32)  
         out_2d_3d_r  = tf.reshape(out_2d_3d_r, [-1, 84, 44, 42])
-        
-        # print se_cnn_out.get_shape() # 84 44 588 
         
         se_cnn_out_r  = tf.reshape(se_cnn_out, [-1, 84, 44, 42, 14] )
         se_cnn_out_r  = tf.argmax (se_cnn_out_r, 4) 
-        se_cnn_out_r  = tf.cast   (se_cnn_out_r, tf.float32) 
-        # print se_cnn_out_r.get_shape()
+        se_cnn_out_r  = tf.cast   (se_cnn_out_r, tf.float32)  
         se_cnn_out_r  = tf.reshape(se_cnn_out_r, [-1, 84, 44, 42])
-        
-        # sys.exit(0)
         
         #---Smoother-----------------------------------------------------------------------------------------------------------------------------------
         
@@ -747,7 +738,8 @@ if __name__ == '__main__':
     ConvNet_class = ConvNet(x_3d, x_2d, y_3d, y_2d, lr, keepProb, phase) 
     init_var      = tf.global_variables_initializer() 
     saver         = tf.train.Saver() 
-    count_params()
+    count_params() # print the number of trainable parameters
+    
     # log_device_placement: shows the log of which task will work on which device.
     # allow_soft_placement: TF choose automatically the available device
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:  
