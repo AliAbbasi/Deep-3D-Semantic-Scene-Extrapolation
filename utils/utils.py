@@ -446,6 +446,40 @@ def project_on_2D_main():
 
 #====================================================================================================================
 
+def precision_recall(score, label, batch_size, classes_count): 
+    tp, fp, fn = [], [], []
+    
+    # TP: True Positive, means region segmented as mass that proved to be mass.
+    for i in range(classes_count):
+        tp.append(len(np.where((score==label)&(score==i))[0]))
+    
+    # FP: False Positive, means region segmented as mass that proved to be not mass.    
+    for i in range(classes_count):
+        indices = np.where(score==i)
+        vox_labels = label[indices]
+        fp.append(len(np.where(vox_labels!=i)[0]))
+        
+    # FN: False Negative, means regon segmented as not mass that proved to be mass.
+    for i in range(classes_count):
+        indices = np.where(label==i)
+        vox_score = score[indices]
+        fn.append(len(np.where(vox_labels!=i)[0]))
+        
+    tp = np.asarray(tp) / batch_size * 1.0
+    fp = np.asarray(fp) / batch_size * 1.0
+    fn = np.asarray(fn) / batch_size * 1.0
+    
+    precision = np.zeros(classes_count)
+    recall = np.zeros(classes_count)
+    
+    for i in range(len(tp)):
+        precision[i] = (tp[i] / (tp[i] + fp[i])) if (tp[i] + fp[i]) != 0.0 else 0.0
+        recall[i] = (tp[i] / (tp[i] + fn[i])) if (tp[i] + fn[i]) != 0.0 else 0.0
+    
+    return precision, recall
+    
+#====================================================================================================================
+
 if __name__ == '__main__':
     # load_time_test()
     # scene_load_and_visualize_test() 
@@ -454,5 +488,5 @@ if __name__ == '__main__':
     # reduce_classes_to_13_main() 
     # fetch_test_set()
     # print len(fetch_random_batch('test_data/', 64))
-    project_on_2D_main()
+    # project_on_2D_main()
     pass 

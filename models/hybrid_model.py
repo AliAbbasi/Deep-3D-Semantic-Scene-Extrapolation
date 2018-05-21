@@ -21,8 +21,8 @@ classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2  
 directory            = 'hybrid_model'
-to_train             = True
-to_restore           = False
+to_train             = False
+to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -37,6 +37,7 @@ test_2d_directory    = 'house_2d/'
 max_iter             = 50000
 learning_rate        = 0.00001
 batch_size           = 16  
+num_of_vis_batch     = 10
 cardinality          = 8 # how many split  
 blocks               = 3 # res_block (split + transition)
 
@@ -608,28 +609,55 @@ def show_result(sess):
     print       ("Creating ply files...")
     
     bs = 0  
-    trData, trLabel = [], [] 
-    batch_arr    = []
-    batch_arr_2d = []
-    test_data = utils.fetch_random_batch(train_directory, batch_size)
+    trData, trLabel   = [], [] 
+    batch_arr         = []
+    batch_arr_2d      = []
+    precision = np.zeros(classes_count)
+    recall = np.zeros(classes_count)
+    accu1_all, accu2_all = 0.0, 0.0
     
-    for test in test_data:   
-        batch_arr_2d.append(np.load(str(test)[:7] + "d" + str(test[7:]))) 
+    for counter in range(num_of_vis_batch):
+        test_data = utils.fetch_random_batch(train_directory, batch_size)
         
-        loaded_file = np.load(test)
-        batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
-        bs += 1   
+        for test in test_data:   
+            batch_arr_2d.append(np.load(str(test)[:7] + "d" + str(test[7:]))) 
+            
+            loaded_file = np.load(test)
+            batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
+            bs += 1   
+            
+        batch_arr    = np.reshape( batch_arr,    ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
+        batch_arr_2d = np.reshape( batch_arr_2d, ( bs, scene_shape[0], scene_shape[2] ))
+        trData    = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+        trLabel   = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt   
+        trData_2d = batch_arr_2d[ :, 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]  # input 
+        trData    = np.reshape(trData,    (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
+        trData_2d = np.reshape(trData_2d, (-1, scene_shape[0] * halfed_scene_shape))
+
+        score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2d, keepProb: 1.0, phase: False})  
+        score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
+        score       = np.argmax ( score, 4)     
+        score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape )) 
+        pre, rec    = utils.precision_recall(score, trLabel, batch_size, classes_count)
+        precision += pre
+        recall += rec
         
-    batch_arr    = np.reshape( batch_arr,    ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
-    batch_arr_2d = np.reshape( batch_arr_2d, ( bs, scene_shape[0], scene_shape[2] ))
-    trData    = batch_arr[    :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-    trLabel   = batch_arr[    :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt   
-    trData_2d = batch_arr_2d[ :, 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]  # input 
-    trData    = np.reshape(trData,    (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
-    trData_2d = np.reshape(trData_2d, (-1, scene_shape[0] * halfed_scene_shape))   
-    accu1, accu2 = accuFun(sess, trData, trLabel, trData_2d, bs)     
-    logging.info("A1: %g, A2: %g" % (accu1, accu2))
-    print       ("A1: %g, A2: %g" % (accu1, accu2))
+        accu1, accu2 = accuFun(sess, trData, trLabel, trData_2d, bs)     
+        accu1_all += accu1
+        accu2_all += accu2  
+        logging.info("A1: %g, A2: %g" % (accu1, accu2))
+        print       ("A1: %g, A2: %g" % (accu1, accu2))
+        trData, trLabel   = [], [] 
+        batch_arr         = []
+        batch_arr_2d      = []
+        bs = 0 
+    
+    print precision / num_of_vis_batch * 1.0
+    print recall / num_of_vis_batch * 1.0
+    print accu1_all / num_of_vis_batch * 1.0
+    print accu2_all / num_of_vis_batch * 1.0
+    
+    sys.exit(0)
     
     for item in glob.glob(directory + "/*.ply"):
         os.remove(item)
