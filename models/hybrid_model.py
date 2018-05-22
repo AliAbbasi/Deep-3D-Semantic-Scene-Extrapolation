@@ -21,7 +21,7 @@ classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2  
 directory            = 'hybrid_model'
-to_train             = False
+to_train             = True
 to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
@@ -37,7 +37,7 @@ test_2d_directory    = 'house_2d/'
 max_iter             = 50000
 learning_rate        = 0.00001
 batch_size           = 16  
-num_of_vis_batch     = 10
+num_of_vis_batch     = 1
 cardinality          = 8 # how many split  
 blocks               = 3 # res_block (split + transition)
 
@@ -617,6 +617,11 @@ def show_result(sess):
     accu1_all, accu2_all = 0.0, 0.0
     
     for counter in range(num_of_vis_batch):
+        trData, trLabel   = [], [] 
+        batch_arr         = []
+        batch_arr_2d      = []
+        bs = 0 
+        
         test_data = utils.fetch_random_batch(train_directory, batch_size)
         
         for test in test_data:   
@@ -647,17 +652,11 @@ def show_result(sess):
         accu2_all += accu2  
         logging.info("A1: %g, A2: %g" % (accu1, accu2))
         print       ("A1: %g, A2: %g" % (accu1, accu2))
-        trData, trLabel   = [], [] 
-        batch_arr         = []
-        batch_arr_2d      = []
-        bs = 0 
-    
+       
     print precision / num_of_vis_batch * 1.0
     print recall / num_of_vis_batch * 1.0
     print accu1_all / num_of_vis_batch * 1.0
     print accu2_all / num_of_vis_batch * 1.0
-    
-    sys.exit(0)
     
     for item in glob.glob(directory + "/*.ply"):
         os.remove(item)
