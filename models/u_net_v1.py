@@ -25,7 +25,7 @@ scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2 
 directory            = 'u_net_v1'
 to_train             = True
-to_restore           = False
+to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -67,50 +67,42 @@ class ConvNet(object):
         params_w = {
                     # down sample
                     'w1'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , halfed_scene_shape , 64               ], stddev = 0.01 )),  
-                    'w2'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
-                    
-                    'w3'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64  , 128                               ], stddev = 0.01 )), 
-                    'w4'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 128                               ], stddev = 0.01 )),  
-                    
-                    'w5'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 256                               ], stddev = 0.01 )),  
-                    'w6'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 256                               ], stddev = 0.01 )),  
-                    
-                    'w7'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 512                               ], stddev = 0.01 )),   
-                    'w8'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 512 , 512                               ], stddev = 0.01 )),  
+                    'w2'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64  , 64                              ], stddev = 0.01 )), 
+                    'w3'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64  , 128                             ], stddev = 0.01 )), 
+                    'w4'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 128                             ], stddev = 0.01 )),  
+                    'w5'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 256                             ], stddev = 0.01 )),  
+                    'w6'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 256                             ], stddev = 0.01 )),  
+                    'w7'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 512                             ], stddev = 0.01 )),   
+                    'w8'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 512 , 512                             ], stddev = 0.01 )),  
                     
                     # up sample
-                    'w9'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 512                               ], stddev = 0.01 )),  
-                    'w10'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 512 , 256                               ], stddev = 0.01 )),  
-                    'w11'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 256                               ], stddev = 0.01 )),  
-                    
-                    'w12'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 256                               ], stddev = 0.01 )),   
-                    'w13'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 128                               ], stddev = 0.01 )), 
-                    'w14'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 128                               ], stddev = 0.01 )), 
-                    
-                    'w15'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64  , 128                              ], stddev = 0.01 )),   
-                    'w16'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 64                               ], stddev = 0.01 )), 
-                    'w17'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64  , 64                               ], stddev = 0.01 )), 
-                    
+                    'w9'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 512                             ], stddev = 0.01 )),  
+                    'w10'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 512 , 256                             ], stddev = 0.01 )),  
+                    'w11'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 256                             ], stddev = 0.01 )), 
+                    'w12'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 256                             ], stddev = 0.01 )),   
+                    'w13'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256 , 128                             ], stddev = 0.01 )), 
+                    'w14'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 128                             ], stddev = 0.01 )),  
+                    'w15'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64  , 128                             ], stddev = 0.01 )),   
+                    'w16'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128 , 64                              ], stddev = 0.01 )), 
+                    'w17'  : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64  , 64                              ], stddev = 0.01 )),  
                     'wOut' : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , classes_count*halfed_scene_shape ], stddev = 0.01 ))
                    } 
         params_b = {
                     'b1'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
                     'b2'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
-                    'b3'   : tf.Variable(tf.truncated_normal( [ 128                               ], stddev = 0.01 )), 
-                    'b4'   : tf.Variable(tf.truncated_normal( [ 128                               ], stddev = 0.01 )), 
-                    'b5'   : tf.Variable(tf.truncated_normal( [ 256                               ], stddev = 0.01 )), 
-                    'b6'   : tf.Variable(tf.truncated_normal( [ 256                               ], stddev = 0.01 )), 
-                    'b7'   : tf.Variable(tf.truncated_normal( [ 512                               ], stddev = 0.01 )), 
+                    'b3'   : tf.Variable(tf.truncated_normal( [ 128                              ], stddev = 0.01 )), 
+                    'b4'   : tf.Variable(tf.truncated_normal( [ 128                              ], stddev = 0.01 )), 
+                    'b5'   : tf.Variable(tf.truncated_normal( [ 256                              ], stddev = 0.01 )), 
+                    'b6'   : tf.Variable(tf.truncated_normal( [ 256                              ], stddev = 0.01 )), 
+                    'b7'   : tf.Variable(tf.truncated_normal( [ 512                              ], stddev = 0.01 )), 
                     'b8'   : tf.Variable(tf.truncated_normal( [ 512                              ], stddev = 0.01 )), 
                     
-                    'b9'   : tf.Variable(tf.truncated_normal( [ 256                               ], stddev = 0.01 )), 
-                    'b10'  : tf.Variable(tf.truncated_normal( [ 256                               ], stddev = 0.01 )), 
-                    'b11'  : tf.Variable(tf.truncated_normal( [ 256                               ], stddev = 0.01 )), 
-                    
-                    'b12'  : tf.Variable(tf.truncated_normal( [ 128                               ], stddev = 0.01 )), 
-                    'b13'  : tf.Variable(tf.truncated_normal( [ 128                               ], stddev = 0.01 )), 
-                    'b14'  : tf.Variable(tf.truncated_normal( [ 128                               ], stddev = 0.01 )), 
-                    
+                    'b9'   : tf.Variable(tf.truncated_normal( [ 256                              ], stddev = 0.01 )), 
+                    'b10'  : tf.Variable(tf.truncated_normal( [ 256                              ], stddev = 0.01 )), 
+                    'b11'  : tf.Variable(tf.truncated_normal( [ 256                              ], stddev = 0.01 )),  
+                    'b12'  : tf.Variable(tf.truncated_normal( [ 128                              ], stddev = 0.01 )), 
+                    'b13'  : tf.Variable(tf.truncated_normal( [ 128                              ], stddev = 0.01 )), 
+                    'b14'  : tf.Variable(tf.truncated_normal( [ 128                              ], stddev = 0.01 )),  
                     'b15'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
                     'b16'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
                     'b17'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
@@ -130,7 +122,7 @@ class ConvNet(object):
                 return x  
                 
         #---------------------------------------------------------------------------------------------------------------------------------------------
-        # upConv_1 =conv2d_transpose( merge_1, G2_W5, G2_b5, [batchSize, 7,  8,  64], "upConvG_1", strides=2 )
+        
         def conv2d_transpose(x, w, b, output_shape, name="conv2d_transpose", strides=2):
             with tf.name_scope(name): 
                 x = tf.nn.conv2d_transpose(x, w, output_shape=output_shape, strides=[1,strides,strides,1])
@@ -311,29 +303,27 @@ def show_result(sess):
     for item in glob.glob(directory + "/*.ply"):
         os.remove(item)
     
-    for test in test_data: 
-        loaded_file = np.load(test)
+    score  = sess.run(ConvNet_class.score, feed_dict={x: trData, keepProb: 1.0, phase: False})  
+    score  = np.reshape(score, (batch_size, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count))
+    score  = np.argmax(score, 4) 
+    trData = np.reshape(trData, (-1, scene_shape[0], scene_shape[1], halfed_scene_shape))
+    
+    for i in range(batch_size):  
+        loaded_file = np.load(test_data[i])
         scene = utils.npy_cutter(loaded_file, scene_shape)
-        trData, trLabel = [], []   
-
-        trData  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
-        trLabel = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
         
-        trData  = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
-        score   = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
-        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
-        score   = np.argmax ( score, 3)     
-        score   = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
-        score   = score[0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape]            
-        trData  = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
+        trData_i = trData[i,:,:,:]
+        trData_i  = np.reshape( trData_i, (scene_shape[0], scene_shape[1], halfed_scene_shape))
         
-        gen_scn = np.concatenate((trData, score), axis=2) 
+        score_i = score[i,:,:,:]
+        score_i = np.reshape( score_i, (scene_shape[0], scene_shape[1], halfed_scene_shape)) 
         
+        gen_scn = np.concatenate((trData_i, score_i), axis=2)  
         empty_space = np.zeros((10, scene_shape[1], scene_shape[2]))
-        gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
+        gen_scn = np.concatenate((gen_scn, empty_space), axis=0) 
         gen_scn = np.concatenate((gen_scn, scene), axis=0)
         
-        output = open( directory + "/" + test[10:] + ".ply" , 'w') 
+        output = open( directory + "/" + test_data[i][10:] + ".ply" , 'w') 
         ply       = ""
         numOfVrtc = 0
         for idx1 in range(gen_scn.shape[0]):
@@ -359,8 +349,8 @@ def show_result(sess):
         output.write("end_header"                            + "\n")
         output.write( ply                                          ) 
         output.close()
-        logging.info(test + ".ply" + " is Done!")
-        print       (test + ".ply" + " is Done!") 
+        logging.info(test_data[i][10:] + ".ply" + " is Done!")
+        print       (test_data[i][10:] + ".ply" + " is Done!") 
     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))    
     print       ("A1: %g, A2: %g" % (accu1, accu2))   
@@ -431,7 +421,7 @@ if __name__ == '__main__':
             sys.exit(0)
         
         # -------------- train phase --------------
-        step         = 1  
+        step         = 0
         train_cost   = []
         valid_cost   = []
         train_accu1  = []
