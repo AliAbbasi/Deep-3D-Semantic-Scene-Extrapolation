@@ -63,6 +63,14 @@ else:
     
 #=====================================================================================================================================================
 
+def count_params():
+    "print number of trainable variables"
+    size = lambda v: reduce(lambda x, y: x*y, v.get_shape().as_list())
+    n = sum(size(v) for v in tf.trainable_variables())
+    print "Model size: %dK" % (n/1000,)
+    
+#=====================================================================================================================================================
+
 class ConvNet(object):
 
     def paramsFun(self): 
@@ -434,6 +442,8 @@ if __name__ == '__main__':
     ConvNet_class = ConvNet(x, y, lr, keepProb, phase)
     init_var      = tf.global_variables_initializer() 
     saver         = tf.train.Saver() 
+    
+    count_params()
     
     # log_device_placement: shows the log of which task will work on which device.
     # allow_soft_placement: TF choose automatically the available device
