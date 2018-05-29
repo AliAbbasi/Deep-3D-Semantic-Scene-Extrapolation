@@ -17,7 +17,7 @@ scene_shape          = [84, 84]
 halfed_scene_shape   = scene_shape[1] / 2  
 directory            = 'pixelcnn_v2'
 to_train             = True
-to_restore           = True
+to_restore           = False
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -113,9 +113,7 @@ class ConvNet( object ):
                     w *= mask 
                 
                 x = tf.nn.conv2d(x, w, strides=[1, strides, strides, 1], padding='SAME')
-                x = tf.nn.bias_add(x, b)
-                tf.summary.histogram("weights", w)
-                tf.summary.histogram("biases",  b) 
+                x = tf.nn.bias_add(x, b) 
                 return x 
                 
         #---------------------------------------------------------------------------------------------------------------------------------------------
@@ -198,12 +196,7 @@ class ConvNet( object ):
     #------------------------------------------------------------------------------------------------------------------------------------------------    
     
     def updateFun(self):
-        return tf.train.AdamOptimizer(learning_rate = self.lr).minimize(self.cost)
-
-    #------------------------------------------------------------------------------------------------------------------------------------------------
-    
-    def sumFun(self):
-        return tf.summary.merge_all()
+        return tf.train.AdamOptimizer(learning_rate = self.lr).minimize(self.cost) 
         
    #--------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -217,8 +210,7 @@ class ConvNet( object ):
         [self.params_w_, self.params_b_] = ConvNet.paramsFun(self) # initialization and packing the parameters
         self.score                       = ConvNet.scoreFun (self) # Computing the score function     
         self.cost                        = ConvNet.costFun  (self) # Computing the cost function 
-        self.update                      = ConvNet.updateFun(self) # Computing the update function
-        self.sum                         = ConvNet.sumFun   (self) # summary logger 4 TensorBoard
+        self.update                      = ConvNet.updateFun(self) # Computing the update function 
 
 #===================================================================================================================================================
   
@@ -248,10 +240,7 @@ def accuFun(sess, trData, trLabel, batch_size):
 
 def generate(sess, scenes, halfed_scene_shape):
     scenes = np.reshape(scenes, (batch_size, scene_shape[0], scene_shape[1]))
-    scenes[:, :, halfed_scene_shape:] = 0. 
-    
-    # utils.npy_to_ply("halfed.ply", scenes[0])
-    # sys.exit(0)
+    scenes[:, :, halfed_scene_shape:] = 0 
     
     for i in range(scene_shape[0]):
         for j in range(halfed_scene_shape):
