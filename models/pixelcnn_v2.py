@@ -239,8 +239,16 @@ def accuFun(sess, trData, trLabel, batch_size):
 #===================================================================================================================================================
 
 def generate(sess, scenes, halfed_scene_shape):
+    # for i in xrange(occlude_start_row,self.height):
+        # for j in xrange(self.width):
+            # for k in xrange(self.channel):
+            # next_sample = self.predict(samples) / (self.pixel_depth - 1.) # argmax or random draw here
+            # samples[:, i, j, k] = next_sample[:, i, j, k]
+
+
     scenes = np.reshape(scenes, (batch_size, scene_shape[0], scene_shape[1]))
     scenes[:, :, halfed_scene_shape:] = 0 
+    scenes /= (classes_count - 1.)
     
     for i in range(scene_shape[0]):
         for j in range(halfed_scene_shape):
@@ -249,6 +257,7 @@ def generate(sess, scenes, halfed_scene_shape):
             score = np.reshape(score, (batch_size, scene_shape[0], scene_shape[1], 1, classes_count))
             score = np.argmax(score, 4)     
             score = np.reshape(score, (batch_size, scene_shape[0], scene_shape[1], 1))
+            score /= (classes_count - 1.)
             scenes = np.reshape(scenes, (batch_size, scene_shape[0], scene_shape[1], 1))
             scenes[:, i, j, 0] = score[:, i, j, 0] 
 
