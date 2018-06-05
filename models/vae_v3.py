@@ -34,7 +34,7 @@ train_directory      = 'house_2d/'
 test_directory       = 'house_2d/'
 max_iter             = 500000
 learning_rate        = 0.00005
-batch_size           = 64 
+batch_size           = 128 
 num_of_vis_batch     = 1
 if not os.path.exists(directory):
     os.makedirs(directory)
@@ -73,9 +73,10 @@ class VariantionalAutoencoder(object):
 
         # Encode
         # x -> z_mean, z_sigma -> z
-        f1 = fc(self.x, 512, scope='enc_fc1', activation_fn=tf.nn.elu)
-        f2 = fc(f1,     384, scope='enc_fc2', activation_fn=tf.nn.elu)
-        f3 = fc(f2,     256, scope='enc_fc3', activation_fn=tf.nn.elu)
+        f0 = fc(self.x, 4096, scope='enc_fc0', activation_fn=tf.nn.elu)
+        f1 = fc(f0,     2048, scope='enc_fc1', activation_fn=tf.nn.elu)
+        f2 = fc(f1,     1024, scope='enc_fc2', activation_fn=tf.nn.elu)
+        f3 = fc(f2,     512,  scope='enc_fc3', activation_fn=tf.nn.elu)
         
         self.z_mu           = fc(f3, self.n_z, scope='enc_fc4_mu',    activation_fn=None)
         self.z_log_sigma_sq = fc(f3, self.n_z, scope='enc_fc4_sigma', activation_fn=None)
@@ -84,10 +85,11 @@ class VariantionalAutoencoder(object):
 
         # Decode
         # z -> x_hat
-        g1 = fc(self.z, 256, scope='dec_fc1', activation_fn=tf.nn.elu)
-        g2 = fc(g1,     384, scope='dec_fc2', activation_fn=tf.nn.elu)
-        g3 = fc(g2,     512, scope='dec_fc3', activation_fn=tf.nn.elu)
-        self.x_hat = fc(g3, input_dim, scope='dec_fc4', activation_fn=tf.sigmoid)
+        g0 =         fc(self.z, 512 ,      scope='dec_fc0', activation_fn=tf.nn.elu)
+        g1 =         fc(g0,     1048,      scope='dec_fc1', activation_fn=tf.nn.elu)
+        g2 =         fc(g1,     2048,      scope='dec_fc2', activation_fn=tf.nn.elu)
+        g3 =         fc(g2,     4096,      scope='dec_fc3', activation_fn=tf.nn.elu)
+        self.x_hat = fc(g3,     input_dim, scope='dec_fc4', activation_fn=tf.sigmoid)
 
         # Loss
         # Reconstruction loss
@@ -104,8 +106,7 @@ class VariantionalAutoencoder(object):
         self.latent_loss = tf.reduce_mean(latent_loss)
 
         self.total_loss = tf.reduce_mean(recon_loss + latent_loss)
-        self.train_op = tf.train.AdamOptimizer(
-            learning_rate=self.learning_rate).minimize(self.total_loss)
+        self.train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.total_loss)
         return
 
     # Execute the forward and the backward pass
@@ -146,109 +147,126 @@ def fetch_x_y(data, limit):
     y = batch[ :, 0:scene_shape[0], 0:scene_shape[1] ]  # gt  
 
     x = np.reshape(x, (-1, scene_shape[0] * scene_shape[1]))
-    y = np.reshape(y, (-1, scene_shape[0] * scene_shape[1]))
+    y = np.reshape(y, (-1, scene_shape[0],  scene_shape[1]))
 
     return x, y
     
     
-def trainer(learning_rate=1e-3, batch_size=64, num_epoch=75, n_z=1000):
+def trainer(learning_rate=1e-5, batch_size=128, num_epoch=75, n_z=1000):
     model = VariantionalAutoencoder(learning_rate=learning_rate, batch_size=batch_size, n_z=n_z)
 
-    for iter in range(5000000):
+    for iter in range(0, 5000000):
         # Obtina a batch
         x_batch, y_batch = fetch_x_y(train_data, batch_threshold)  
+        
+        y_batch = np.zeros((batch_size, 84 * 84))
+        y_batch[:, :] = x_batch
+        y_batch = np.reshape(y_batch, (-1, scene_shape[0], scene_shape[1]))
+        
         x_batch /= 14.0    
         # Execute the forward and the backward pass and report computed losses
         loss, recon_loss, latent_loss = model.run_single_step(x_batch)
 
-        if iter % 100 == 0:
+        if iter % 10 == 0:
             print('[Iter {}] Loss: {}, Recon: {}, Latent: {}'.format(iter, loss, recon_loss, latent_loss))
             
-        if iter % 10000 == 0:
+        if iter % 5000 == 0:    # completion
+            x_batch = np.reshape(x_batch, (-1, scene_shape[0], scene_shape[1]))
+            x_batch[:, :, :42] = np.random.rand(128, 84, 42)
+            x_batch = np.reshape(x_batch, (-1, scene_shape[0] * scene_shape[1]))
+            
             x_reconstructed = model.reconstructor(x_batch)
             x_reconstructed = (x_reconstructed*14.0).astype(int) 
             x_reconstructed = np.reshape(x_reconstructed, (-1, scene_shape[0], scene_shape[1]))
             x_batch = np.reshape(x_batch, (-1, scene_shape[0], scene_shape[1])) 
-            x_batch = (x_batch*14.0).astype(int)
-            for i in range(x_reconstructed.shape[0]):
-            
-                # empty_space = np.zeros((scene_shape[1], 10))
-                # gen_scn = np.concatenate((score[i], empty_space), axis=1)
-                # gen_scn = np.concatenate((gen_scn, trLabel[i]), axis=1)
-        
+            x_batch = (x_batch*14.0).astype(int) 
+            for i in range(20): 
                 scene = x_reconstructed[i]
                 empty = np.zeros((84, 10))
                 scene = np.concatenate((scene, empty), axis=1)
-                scene = np.concatenate((scene, x_batch[i]), axis=1)            
+                scene = np.concatenate((scene, y_batch[i]), axis=1)            
                 utils.npy_to_ply(directory + "/_" + str(i) + "_generated", scene) 
+            
+        # if iter % 5000 == 0:   # reconstruction
+            # x_reconstructed = model.reconstructor(x_batch)
+            # x_reconstructed = (x_reconstructed*14.0).astype(int) 
+            # x_reconstructed = np.reshape(x_reconstructed, (-1, scene_shape[0], scene_shape[1]))
+            # x_batch = np.reshape(x_batch, (-1, scene_shape[0], scene_shape[1])) 
+            # x_batch = (x_batch*14.0).astype(int)
+            # for i in range(x_reconstructed.shape[0]): 
+                # scene = x_reconstructed[i]
+                # empty = np.zeros((84, 10))
+                # scene = np.concatenate((scene, empty), axis=1)
+                # scene = np.concatenate((scene, x_batch[i]), axis=1)            
+                # utils.npy_to_ply(directory + "/_" + str(i) + "_generated", scene) 
 
     print('Done!')
     return model
 
 # Train the model
-model = trainer(learning_rate=1e-4, batch_size=64, num_epoch=100, n_z=1000)
+model = trainer(learning_rate=1e-4, batch_size=128, num_epoch=100, n_z=512)
 
 # =========================================================================================================================
 
-# Test the trained model: reconstruction
-batch = mnist.test.next_batch(100)
-x_reconstructed = model.reconstructor(batch[0])
-
-n = np.sqrt(model.batch_size).astype(np.int32)
-I_reconstructed = np.empty((h*n, 2*w*n))
-for i in range(n):
-    for j in range(n):
-        x = np.concatenate( (x_reconstructed[i*n+j, :].reshape(h, w), batch[0][i*n+j, :].reshape(h, w)), axis=1 )
-        I_reconstructed[i*h:(i+1)*h, j*2*w:(j+1)*2*w] = x
-
-fig = plt.figure()
-plt.imshow(I_reconstructed, cmap='gray')
-plt.savefig('I_reconstructed.png')
-plt.close(fig)
-
-# Test the trained model: generation
-# Sample noise vectors from N(0, 1)
-z = np.random.normal(size=[model.batch_size, model.n_z])
-x_generated = model.generator(z)
-
-n = np.sqrt(model.batch_size).astype(np.int32)
-I_generated = np.empty((h*n, w*n))
-for i in range(n):
-    for j in range(n):
-        I_generated[i*h:(i+1)*h, j*w:(j+1)*w] = x_generated[i*n+j, :].reshape(28, 28)
-
-fig = plt.figure()
-plt.imshow(I_generated, cmap='gray')
-plt.savefig('I_generated.png')
-plt.close(fig)
-
-tf.reset_default_graph()
-# Train the model with 2d latent space
-model_2d = trainer(learning_rate=1e-4,  batch_size=64, num_epoch=50, n_z=2)
-
-# Test the trained model: transformation
-batch = mnist.test.next_batch(3000)
-z = model_2d.transformer(batch[0])
-fig = plt.figure()
-plt.scatter(z[:, 0], z[:, 1], c=np.argmax(batch[1], 1))
-plt.colorbar()
-plt.grid()
-plt.savefig('I_transformed.png')
-plt.close(fig)
-
-# Test the trained model: transformation
-n = 20
-x = np.linspace(-2, 2, n)
-y = np.linspace(-2, 2, n)
-
-I_latent = np.empty((h*n, w*n))
-for i, yi in enumerate(x):
-    for j, xi in enumerate(y):
-        z = np.array([[xi, yi]]*model_2d.batch_size)
-        x_hat = model_2d.generator(z)
-        I_latent[(n-i-1)*28:(n-i)*28, j*28:(j+1)*28] = x_hat[0].reshape(28, 28)
-
-fig = plt.figure()
-plt.imshow(I_latent, cmap="gray")
-plt.savefig('I_latent.png')
-plt.close(fig)
+## Test the trained model: reconstruction
+#batch = mnist.test.next_batch(100)
+#x_reconstructed = model.reconstructor(batch[0])
+#
+#n = np.sqrt(model.batch_size).astype(np.int32)
+#I_reconstructed = np.empty((h*n, 2*w*n))
+#for i in range(n):
+#    for j in range(n):
+#        x = np.concatenate( (x_reconstructed[i*n+j, :].reshape(h, w), batch[0][i*n+j, :].reshape(h, w)), axis=1 )
+#        I_reconstructed[i*h:(i+1)*h, j*2*w:(j+1)*2*w] = x
+#
+#fig = plt.figure()
+#plt.imshow(I_reconstructed, cmap='gray')
+#plt.savefig('I_reconstructed.png')
+#plt.close(fig)
+#
+## Test the trained model: generation
+## Sample noise vectors from N(0, 1)
+#z = np.random.normal(size=[model.batch_size, model.n_z])
+#x_generated = model.generator(z)
+#
+#n = np.sqrt(model.batch_size).astype(np.int32)
+#I_generated = np.empty((h*n, w*n))
+#for i in range(n):
+#    for j in range(n):
+#        I_generated[i*h:(i+1)*h, j*w:(j+1)*w] = x_generated[i*n+j, :].reshape(28, 28)
+#
+#fig = plt.figure()
+#plt.imshow(I_generated, cmap='gray')
+#plt.savefig('I_generated.png')
+#plt.close(fig)
+#
+#tf.reset_default_graph()
+## Train the model with 2d latent space
+#model_2d = trainer(learning_rate=1e-4,  batch_size=64, num_epoch=50, n_z=2)
+#
+## Test the trained model: transformation
+#batch = mnist.test.next_batch(3000)
+#z = model_2d.transformer(batch[0])
+#fig = plt.figure()
+#plt.scatter(z[:, 0], z[:, 1], c=np.argmax(batch[1], 1))
+#plt.colorbar()
+#plt.grid()
+#plt.savefig('I_transformed.png')
+#plt.close(fig)
+#
+## Test the trained model: transformation
+#n = 20
+#x = np.linspace(-2, 2, n)
+#y = np.linspace(-2, 2, n)
+#
+#I_latent = np.empty((h*n, w*n))
+#for i, yi in enumerate(x):
+#    for j, xi in enumerate(y):
+#        z = np.array([[xi, yi]]*model_2d.batch_size)
+#        x_hat = model_2d.generator(z)
+#        I_latent[(n-i-1)*28:(n-i)*28, j*28:(j+1)*28] = x_hat[0].reshape(28, 28)
+#
+#fig = plt.figure()
+#plt.imshow(I_latent, cmap="gray")
+#plt.savefig('I_latent.png')
+#plt.close(fig)
