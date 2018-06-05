@@ -74,10 +74,10 @@ class VariantionalAutoencoder(object):
 
         # Encode
         # x -> z_mean, z_sigma -> z
-        f0 = fc(self.x, 4096, scope='enc_fc0', activation_fn=tf.nn.elu, weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.0005))
-        f1 = fc(f0,     2048, scope='enc_fc1', activation_fn=tf.nn.elu, weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.0005))
-        f2 = fc(f1,     1024, scope='enc_fc2', activation_fn=tf.nn.elu, weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.0005))
-        f3 = fc(f2,     512,  scope='enc_fc3', activation_fn=tf.nn.elu, weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.0005))
+        f0 = fc(self.x, 4096, scope='enc_fc0', activation_fn=tf.nn.elu, weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.05))
+        f1 = fc(f0,     2048, scope='enc_fc1', activation_fn=tf.nn.elu, weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.05))
+        f2 = fc(f1,     1024, scope='enc_fc2', activation_fn=tf.nn.elu, weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.05))
+        f3 = fc(f2,     512,  scope='enc_fc3', activation_fn=tf.nn.elu, weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.05))
         
         self.z_mu           = fc(f3, self.n_z, scope='enc_fc4_mu',    activation_fn=None)
         self.z_log_sigma_sq = fc(f3, self.n_z, scope='enc_fc4_sigma', activation_fn=None)
@@ -86,11 +86,11 @@ class VariantionalAutoencoder(object):
 
         # Decode
         # z -> x_hat
-        g0 =         fc(self.z, 512 ,      scope='dec_fc0', activation_fn=tf.nn.elu , weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.0005))
-        g1 =         fc(g0,     1048,      scope='dec_fc1', activation_fn=tf.nn.elu , weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.0005))
-        g2 =         fc(g1,     2048,      scope='dec_fc2', activation_fn=tf.nn.elu , weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.0005))
-        g3 =         fc(g2,     4096,      scope='dec_fc3', activation_fn=tf.nn.elu , weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.0005))
-        self.x_hat = fc(g3,     input_dim, scope='dec_fc4', activation_fn=tf.sigmoid, weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.0005))
+        g0 =         fc(self.z, 512 ,      scope='dec_fc0', activation_fn=tf.nn.elu , weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.05))
+        g1 =         fc(g0,     1048,      scope='dec_fc1', activation_fn=tf.nn.elu , weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.05))
+        g2 =         fc(g1,     2048,      scope='dec_fc2', activation_fn=tf.nn.elu , weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.05))
+        g3 =         fc(g2,     4096,      scope='dec_fc3', activation_fn=tf.nn.elu , weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.05))
+        self.x_hat = fc(g3,     input_dim, scope='dec_fc4', activation_fn=tf.sigmoid, weights_initializer=tf.truncated_normal_initializer(stddev=0.01),weights_regularizer=slim.l2_regularizer(0.05))
 
         # Loss
         # Reconstruction loss
@@ -173,15 +173,13 @@ def trainer(learning_rate=1e-5, batch_size=1, num_epoch=75, n_z=1000):
             
         if iter % 100 == 0:    # completion
             x_batch = np.reshape(x_batch, (-1, scene_shape[0], scene_shape[1]))
-            # x_batch[:, :, :42] = np.random.rand(1, 84, 42)
-            x_batch[:, :, :42] = 0.0
+            x_batch[:, :, :42] = np.random.rand(1, 84, 42) 
             x_batch = np.reshape(x_batch, (-1, scene_shape[0] * scene_shape[1]))
             
             x_reconstructed = model.reconstructor(x_batch)
             x_reconstructed = (x_reconstructed*14.0).astype(int) 
             x_reconstructed = np.reshape(x_reconstructed, (-1, scene_shape[0], scene_shape[1]))
             x_batch = np.reshape(x_batch, (-1, scene_shape[0], scene_shape[1])) 
-            # x_batch = (x_batch*14.0).astype(int) 
             x_batch = (x_batch*14.0) 
             x_batch = np.around(x_batch)
             for i in range(1): 
@@ -189,20 +187,7 @@ def trainer(learning_rate=1e-5, batch_size=1, num_epoch=75, n_z=1000):
                 empty = np.zeros((84, 10))
                 scene = np.concatenate((scene, empty), axis=1)
                 scene = np.concatenate((scene, y_batch[i]), axis=1)            
-                utils.npy_to_ply(directory + "/_" + str(i) + "_generated", scene) 
-            
-        # if iter % 5000 == 0:   # reconstruction
-            # x_reconstructed = model.reconstructor(x_batch)
-            # x_reconstructed = (x_reconstructed*14.0).astype(int) 
-            # x_reconstructed = np.reshape(x_reconstructed, (-1, scene_shape[0], scene_shape[1]))
-            # x_batch = np.reshape(x_batch, (-1, scene_shape[0], scene_shape[1])) 
-            # x_batch = (x_batch*14.0).astype(int)
-            # for i in range(x_reconstructed.shape[0]): 
-                # scene = x_reconstructed[i]
-                # empty = np.zeros((84, 10))
-                # scene = np.concatenate((scene, empty), axis=1)
-                # scene = np.concatenate((scene, x_batch[i]), axis=1)            
-                # utils.npy_to_ply(directory + "/_" + str(i) + "_generated", scene) 
+                utils.npy_to_ply(directory + "/_" + str(i) + "_generated", scene)  
 
     print('Done!')
     return model
