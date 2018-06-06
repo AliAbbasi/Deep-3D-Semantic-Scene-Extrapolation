@@ -201,11 +201,21 @@ def trainer(learning_rate=1e-5, batch_size=128, num_epoch=75, n_z=1000):
             x_batch[:, :, :42] = np.random.rand(128, 84, 42) 
             x_batch = np.reshape(x_batch, (-1, scene_shape[0] * scene_shape[1]))
             
-            x_reconstructed = model.reconstructor(x_batch)
-            x_reconstructed = (x_reconstructed*14.0).astype(int) 
+            x_reconstructed = model.reconstructor(x_batch) 
+            x_reconstructed = np.reshape(x_reconstructed, (-1, scene_shape[0], scene_shape[1])) 
+            
+            #---------------------------------------- 
+            for i in range(batch_size):
+                x_reconstructed[i, :] *= x_batch_max[i] 
+                
+            for i in range(batch_size):
+                x_reconstructed[i, :] += x_batch_min[i]
+            
+            x_reconstructed = np.reshape(x_reconstructed, (-1, scene_shape[0] * scene_shape[1]))            
+            x_reconstructed = ((x_reconstructed+x_mean)*x_std*1.0)
             x_reconstructed = np.reshape(x_reconstructed, (-1, scene_shape[0], scene_shape[1]))
-            x_batch = np.reshape(x_batch, (-1, scene_shape[0], scene_shape[1])) 
-            x_batch = (x_batch*14.0).astype(int)  ### ??????
+            #----------------------------------------
+            
             for i in range(20):   
                 scene = x_reconstructed[i]
                 empty = np.zeros((84, 10))
