@@ -182,12 +182,15 @@ def trainer(learning_rate=1e-5, batch_size=128, num_epoch=75, n_z=1000):
         y_batch = np.reshape(y_batch, (-1, scene_shape[0], scene_shape[1]))
         
         # normalize X = (X - mean) / std
-        x_batch = ((x_batch-x_mean)/x_std*1.0)
-        x_batch = np.sum(x_batch, (np.min(x_batch, axis=1)* -1.0), axis=1)
-        # x_batch -= np.min(x_batch, axis=1)
-        # x_batch = np.divide(x_batch, np.max(x_batch, axis=1), axis=1)
-        x_batch /= np.max(x_batch, axis=1)
-        # Execute the forward and the backward pass and report computed losses
+        x_batch = ((x_batch-x_mean)/x_std*1.0)  
+        x_batch_min = np.min(x_batch, axis=1)
+        for i in range(batch_size):
+            x_batch[i, :] -= x_batch_min[i]
+            
+        x_batch_max = np.max(x_batch, axis=1)
+        for i in range(batch_size):
+            x_batch[i, :] /= x_batch_max[i] 
+            
         loss, recon_loss, latent_loss = model.run_single_step(x_batch)
 
         if iter % 10 == 0:
