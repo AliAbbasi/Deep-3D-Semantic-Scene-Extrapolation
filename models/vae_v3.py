@@ -172,8 +172,8 @@ def trainer(learning_rate=1e-5, batch_size=128, num_epoch=75, n_z=1000):
             
         if iter % 5000 == 0:    # completion
             x_batch = np.reshape(x_batch, (-1, scene_shape[0], scene_shape[1]))
-            # x_batch[:, :, :42] = np.random.rand(128, 84, 42)
-            x_batch[:, :, :42] = 0.
+            x_batch[:, :, :42] = np.random.rand(128, 84, 42)
+            # x_batch[:, :, :42] = 0.
             x_batch = np.reshape(x_batch, (-1, scene_shape[0] * scene_shape[1]))
             
             x_reconstructed = model.reconstructor(x_batch)
