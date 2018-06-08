@@ -37,7 +37,7 @@ test_2d_directory    = 'house_2d/'
 max_iter             = 50000
 learning_rate        = 0.00001
 batch_size           = 16  
-num_of_vis_batch     = 1
+num_of_vis_batch     = 15
 cardinality          = 8 # how many split  
 blocks               = 3 # res_block (split + transition)
 
@@ -616,105 +616,112 @@ def show_result(sess):
     recall = np.zeros(classes_count)
     accu1_all, accu2_all = 0.0, 0.0
     
-    for counter in range(num_of_vis_batch):
-        trData, trLabel   = [], [] 
-        batch_arr         = []
-        batch_arr_2d      = []
-        bs = 0 
+    # for counter in range(num_of_vis_batch): 
+        # trData, trLabel   = [], [] 
+        # batch_arr         = []
+        # batch_arr_2d      = []
+        # bs = 0 
         
-        test_data = utils.fetch_random_batch(train_directory, batch_size)
+        # test_data = utils.fetch_random_batch(train_directory, batch_size)
         
-        for test in test_data:   
-            batch_arr_2d.append(np.load(str(test)[:7] + "d" + str(test[7:]))) 
+        # for test in test_data:   
+            # batch_arr_2d.append(np.load(str(test)[:7] + "d" + str(test[7:]))) 
             
-            loaded_file = np.load(test)
-            batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
-            bs += 1   
+            # loaded_file = np.load(test)
+            # batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
+            # bs += 1   
             
-        batch_arr    = np.reshape( batch_arr,    ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
-        batch_arr_2d = np.reshape( batch_arr_2d, ( bs, scene_shape[0], scene_shape[2] ))
-        trData    = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-        trLabel   = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt   
-        trData_2d = batch_arr_2d[ :, 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]  # input 
-        trData    = np.reshape(trData,    (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
-        trData_2d = np.reshape(trData_2d, (-1, scene_shape[0] * halfed_scene_shape))
+        # batch_arr    = np.reshape( batch_arr,    ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
+        # batch_arr_2d = np.reshape( batch_arr_2d, ( bs, scene_shape[0], scene_shape[2] ))
+        # trData    = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+        # trLabel   = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt   
+        # trData_2d = batch_arr_2d[ :, 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]  # input 
+        # trData    = np.reshape(trData,    (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
+        # trData_2d = np.reshape(trData_2d, (-1, scene_shape[0] * halfed_scene_shape))
 
-        score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2d, keepProb: 1.0, phase: False})  
-        score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
-        score       = np.argmax ( score, 4)     
-        score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape )) 
-        pre, rec    = utils.precision_recall(score, trLabel, batch_size, classes_count)
-        precision += pre
-        recall += rec
+        # score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2d, keepProb: 1.0, phase: False})  
+        # score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
+        # score       = np.argmax ( score, 4)     
+        # score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape )) 
+        # pre, rec    = utils.precision_recall(score, trLabel, batch_size, classes_count)
+        # precision += pre
+        # recall += rec
         
-        accu1, accu2 = accuFun(sess, trData, trLabel, trData_2d, bs)     
-        accu1_all += accu1
-        accu2_all += accu2  
-        logging.info("A1: %g, A2: %g" % (accu1, accu2))
-        print       ("A1: %g, A2: %g" % (accu1, accu2))
+        # accu1, accu2 = accuFun(sess, trData, trLabel, trData_2d, bs)     
+        # accu1_all += accu1
+        # accu2_all += accu2  
+        # logging.info("A1: %g, A2: %g" % (accu1, accu2))
+        # print       ("A1: %g, A2: %g" % (accu1, accu2))
        
-    print precision / num_of_vis_batch * 1.0
-    print recall / num_of_vis_batch * 1.0
-    print accu1_all / num_of_vis_batch * 1.0
-    print accu2_all / num_of_vis_batch * 1.0
+    # print precision / num_of_vis_batch * 1.0
+    # print recall / num_of_vis_batch * 1.0
+    # print accu1_all / num_of_vis_batch * 1.0
+    # print accu2_all / num_of_vis_batch * 1.0
     
     for item in glob.glob(directory + "/*.ply"):
         os.remove(item)
-    
-    for i in range(batch_size): 
-        loaded_file = np.load(test_data[i])
-        scene = utils.npy_cutter(loaded_file, scene_shape)
-        trData, trLabel = [], []
         
-        scene_2d = batch_arr_2d[i]
+    for counter in range(num_of_vis_batch):
+        batch_arr_2d      = []
+        test_data = utils.fetch_random_batch(train_directory, batch_size)
+        
+        for test in test_data:   
+            batch_arr_2d.append(np.load(str(test)[:7] + "d" + str(test[7:])))  
+        
+        for i in range(batch_size): 
+            loaded_file = np.load(test_data[i])
+            scene = utils.npy_cutter(loaded_file, scene_shape)
+            trData, trLabel = [], []
+            
+            scene_2d = batch_arr_2d[i]
 
-        trData   = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
-        trData_2 = scene_2d[ 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]                   # input 
-        trLabel  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
-        
-        trData      = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
-        trData_2    = np.reshape( trData_2, ( -1, scene_shape[0] * halfed_scene_shape ))  
-        score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2, keepProb: 1.0, phase: False})  
-        score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
-        score       = np.argmax ( score, 3)     
-        score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
-        score       = score[0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape]            
-        trData      = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
-        
-        gen_scn = np.concatenate((trData, score), axis=2) 
-        
-        empty_space = np.zeros((10, scene_shape[1], scene_shape[2]))
-        gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
-        gen_scn = np.concatenate((gen_scn, scene), axis=0)
-        
-        output = open( directory + "/" + test_data[i][10:] + ".ply" , 'w') 
-        ply       = ""
-        numOfVrtc = 0
-        for idx1 in range(gen_scn.shape[0]):
-            for idx2 in range(gen_scn.shape[1]): 
-                for idx3 in range(gen_scn.shape[2]):  
-                    if gen_scn[idx1][idx2][idx3] > 0:  
-                        ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(utils.colors[ int(gen_scn[idx1][idx2][idx3]) ]) + "\n" 
-                        numOfVrtc += 1
-                        
-        output.write("ply"                                   + "\n")
-        output.write("format ascii 1.0"                      + "\n")
-        output.write("comment VCGLIB generated"              + "\n")
-        output.write("element vertex " +  str(numOfVrtc)     + "\n")
-        output.write("property float x"                      + "\n")
-        output.write("property float y"                      + "\n")
-        output.write("property float z"                      + "\n")
-        output.write("property uchar red"                    + "\n")
-        output.write("property uchar green"                  + "\n")
-        output.write("property uchar blue"                   + "\n")
-        output.write("property uchar alpha"                  + "\n")
-        output.write("element face 0"                        + "\n")
-        output.write("property list uchar int vertex_indices"+ "\n")
-        output.write("end_header"                            + "\n")
-        output.write( ply                                          ) 
-        output.close()
-        logging.info(test_data[i] + ".ply" + " is Done!")
-        print       (test_data[i] + ".ply" + " is Done!") 
+            trData   = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
+            trData_2 = scene_2d[ 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]                   # input 
+            trLabel  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
+            
+            trData      = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
+            trData_2    = np.reshape( trData_2, ( -1, scene_shape[0] * halfed_scene_shape ))  
+            score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2, keepProb: 1.0, phase: False})  
+            score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
+            score       = np.argmax ( score, 3)     
+            score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
+            score       = score[0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape]            
+            trData      = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
+            
+            gen_scn = np.concatenate((trData, score), axis=2) 
+            
+            empty_space = np.zeros((10, scene_shape[1], scene_shape[2]))
+            gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
+            gen_scn = np.concatenate((gen_scn, scene), axis=0)
+            
+            output = open( directory + "/" + test_data[i][10:] + ".ply" , 'w') 
+            ply       = ""
+            numOfVrtc = 0
+            for idx1 in range(gen_scn.shape[0]):
+                for idx2 in range(gen_scn.shape[1]): 
+                    for idx3 in range(gen_scn.shape[2]):  
+                        if gen_scn[idx1][idx2][idx3] > 0:  
+                            ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(utils.colors[ int(gen_scn[idx1][idx2][idx3]) ]) + "\n" 
+                            numOfVrtc += 1
+                            
+            output.write("ply"                                   + "\n")
+            output.write("format ascii 1.0"                      + "\n")
+            output.write("comment VCGLIB generated"              + "\n")
+            output.write("element vertex " +  str(numOfVrtc)     + "\n")
+            output.write("property float x"                      + "\n")
+            output.write("property float y"                      + "\n")
+            output.write("property float z"                      + "\n")
+            output.write("property uchar red"                    + "\n")
+            output.write("property uchar green"                  + "\n")
+            output.write("property uchar blue"                   + "\n")
+            output.write("property uchar alpha"                  + "\n")
+            output.write("element face 0"                        + "\n")
+            output.write("property list uchar int vertex_indices"+ "\n")
+            output.write("end_header"                            + "\n")
+            output.write( ply                                          ) 
+            output.close()
+            logging.info(test_data[i] + ".ply" + " is Done!")
+            print       (test_data[i] + ".ply" + " is Done!") 
     
     logging.info("A1: %g, A2: %g" % (accu1, accu2))    
     print       ("A1: %g, A2: %g" % (accu1, accu2))   
