@@ -35,7 +35,7 @@ visualize_scene      = True
 visualize_scene_step = 3125
 subset_train         = False 
 train_directory      = 'house_2/' 
-test_directory       = 'test_data/'
+test_directory       = 'test_data_2/'
 max_iter             = 50000
 learning_rate        = 0.00005
 batch_size           = 32 
@@ -320,73 +320,78 @@ def show_result(sess):
     for item in glob.glob(directory + "/*.ply"):
         os.remove(item)
     
-    for counter in range(num_of_vis_batch):
-        test_data = utils.fetch_random_batch(test_directory, batch_size)
-        trData, trLabel = [], [] 
-        batch_arr = []
-        bs = 0
+    batch_arr = []
+    name_arr = []
+    counter = 0
+    for item in glob.glob(test_directory + '*.npy'):
+        name_arr.append(str(item[12:]))
+        loaded_file = np.load(item)
+        batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
+        counter += 1
         
-        for test in test_data:   
-            loaded_file = np.load(test)
-            batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
-            bs += 1   
+        # if counter == batch_size:  
+    batch_arr = np.reshape( batch_arr, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))
+    trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+    trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt     
+    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
+    
+    score  = sess.run(ConvNet_class.score, feed_dict={x: trData, keepProb: 1.0, phase: False})  
+    score  = np.reshape(score, (counter, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count))
+    score  = np.argmax(score, 4) 
+    trData = np.reshape(trData, (-1, scene_shape[0], scene_shape[1], halfed_scene_shape))
+    
+    for i in range(counter):  
+        # loaded_file = np.load(test_data[i])
+        # scene = utils.npy_cutter(loaded_file, scene_shape)
         
-        batch_arr = np.reshape( batch_arr, ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
-        trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-        trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt     
-        trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
+        trData_i = trData[i,:,:,:]
+        trData_i  = np.reshape( trData_i, (scene_shape[0], scene_shape[1], halfed_scene_shape))
         
-        score  = sess.run(ConvNet_class.score, feed_dict={x: trData, keepProb: 1.0, phase: False})  
-        score  = np.reshape(score, (batch_size, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count))
-        score  = np.argmax(score, 4) 
-        trData = np.reshape(trData, (-1, scene_shape[0], scene_shape[1], halfed_scene_shape))
+        score_i = score[i,:,:,:]
+        score_i = np.reshape( score_i, (scene_shape[0], scene_shape[1], halfed_scene_shape)) 
         
-        for i in range(batch_size):  
-            loaded_file = np.load(test_data[i])
-            scene = utils.npy_cutter(loaded_file, scene_shape)
-            
-            trData_i = trData[i,:,:,:]
-            trData_i  = np.reshape( trData_i, (scene_shape[0], scene_shape[1], halfed_scene_shape))
-            
-            score_i = score[i,:,:,:]
-            score_i = np.reshape( score_i, (scene_shape[0], scene_shape[1], halfed_scene_shape)) 
-            
-            gen_scn = np.concatenate((trData_i, score_i), axis=2)  
-            empty_space = np.zeros((10, scene_shape[1], scene_shape[2]))
-            gen_scn = np.concatenate((gen_scn, empty_space), axis=0) 
-            gen_scn = np.concatenate((gen_scn, scene), axis=0)
-            
-            output = open( directory + "/" + test_data[i][10:] + ".ply" , 'w') 
-            ply       = ""
-            numOfVrtc = 0
-            for idx1 in range(gen_scn.shape[0]):
-                for idx2 in range(gen_scn.shape[1]): 
-                    for idx3 in range(gen_scn.shape[2]):  
-                        if gen_scn[idx1][idx2][idx3] > 0:  
-                            ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(utils.colors[ int(gen_scn[idx1][idx2][idx3]) ]) + "\n" 
-                            numOfVrtc += 1
-                            
-            output.write("ply"                                   + "\n")
-            output.write("format ascii 1.0"                      + "\n")
-            output.write("comment VCGLIB generated"              + "\n")
-            output.write("element vertex " +  str(numOfVrtc)     + "\n")
-            output.write("property float x"                      + "\n")
-            output.write("property float y"                      + "\n")
-            output.write("property float z"                      + "\n")
-            output.write("property uchar red"                    + "\n")
-            output.write("property uchar green"                  + "\n")
-            output.write("property uchar blue"                   + "\n")
-            output.write("property uchar alpha"                  + "\n")
-            output.write("element face 0"                        + "\n")
-            output.write("property list uchar int vertex_indices"+ "\n")
-            output.write("end_header"                            + "\n")
-            output.write( ply                                          ) 
-            output.close()
-            logging.info(test_data[i][10:] + ".ply" + " is Done!")
-            print       (test_data[i][10:] + ".ply" + " is Done!") 
+        empty_scene = np.zeros((84,44,42))
+        empty_space = np.zeros((scene_shape[0], scene_shape[1], 50)) 
+        empty_scene = np.concatenate((trData_i, empty_scene), axis=2)   
+        empty_scene = np.concatenate((empty_scene, empty_space), axis=2)  
+        gen_scn = np.concatenate((trData_i, score_i), axis=2)  
+        gen_scn = np.concatenate((empty_scene, gen_scn), axis=2)   
+        empty_space = np.zeros((scene_shape[0], scene_shape[1], 50))
+        gen_scn = np.concatenate((gen_scn, empty_space), axis=2) 
+        gen_scn = np.concatenate((gen_scn, batch_arr[i,:,:,:]), axis=2) 
         
-    logging.info("A1: %g, A2: %g" % (accu1, accu2))    
-    print       ("A1: %g, A2: %g" % (accu1, accu2)) 
+        output = open( directory + "/" + name_arr[i] + ".ply" , 'w') 
+        ply       = ""
+        numOfVrtc = 0
+        for idx1 in range(gen_scn.shape[0]):
+            for idx2 in range(gen_scn.shape[1]): 
+                for idx3 in range(gen_scn.shape[2]):  
+                    if gen_scn[idx1][idx2][idx3] > 0:  
+                        ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(utils.colors[ int(gen_scn[idx1][idx2][idx3]) ]) + "\n" 
+                        numOfVrtc += 1
+                        
+        output.write("ply"                                   + "\n")
+        output.write("format ascii 1.0"                      + "\n")
+        output.write("comment VCGLIB generated"              + "\n")
+        output.write("element vertex " +  str(numOfVrtc)     + "\n")
+        output.write("property float x"                      + "\n")
+        output.write("property float y"                      + "\n")
+        output.write("property float z"                      + "\n")
+        output.write("property uchar red"                    + "\n")
+        output.write("property uchar green"                  + "\n")
+        output.write("property uchar blue"                   + "\n")
+        output.write("property uchar alpha"                  + "\n")
+        output.write("element face 0"                        + "\n")
+        output.write("property list uchar int vertex_indices"+ "\n")
+        output.write("end_header"                            + "\n")
+        output.write( ply                                          ) 
+        output.close() 
+        print       (test_data[i][12:] + ".ply" + " is Done!") 
+    
+    batch_arr = []  
+    name_arr = []
+    counter = 0
+        
     
     # for i in range(batch_size): 
         # loaded_file = np.load(test_data[i])
