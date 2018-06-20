@@ -22,8 +22,8 @@ classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2  
 directory            = 'hybrid_model_v2'
-to_train             = True
-to_restore           = False
+to_train             = False
+to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -32,10 +32,10 @@ visualize_scene      = True
 visualize_scene_step = 5000
 subset_train         = False 
 train_directory      = 'house_2/' 
-test_directory       = 'test_data/'
+test_directory       = 'test_data_2/'
 train_2d_directory   = 'house_2d/' 
 test_2d_directory    = 'house_2d/'
-max_iter             = 50000
+max_iter             = 500000
 learning_rate        = 0.00001
 batch_size           = 16  
 num_of_vis_batch     = 1
@@ -617,78 +617,52 @@ def show_result(sess):
     recall = np.zeros(classes_count)
     accu1_all, accu2_all = 0.0, 0.0
     
-    for counter in range(num_of_vis_batch):
-        trData, trLabel   = [], [] 
-        batch_arr         = []
-        batch_arr_2d      = []
-        bs = 0 
-        
-        test_data = utils.fetch_random_batch(train_directory, batch_size)
-        
-        for test in test_data:   
-            batch_arr_2d.append(np.load(str(test)[:7] + "d" + str(test[7:]))) 
-            
-            loaded_file = np.load(test)
-            batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
-            bs += 1   
-            
-        batch_arr    = np.reshape( batch_arr,    ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
-        batch_arr_2d = np.reshape( batch_arr_2d, ( bs, scene_shape[0], scene_shape[2] ))
-        trData    = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
-        trLabel   = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt   
-        trData_2d = batch_arr_2d[ :, 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]  # input 
-        trData    = np.reshape(trData,    (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
-        trData_2d = np.reshape(trData_2d, (-1, scene_shape[0] * halfed_scene_shape))
-
-        score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2d, keepProb: 1.0, phase: False})  
-        score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
-        score       = np.argmax ( score, 4)     
-        score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape )) 
-        pre, rec    = utils.precision_recall(score, trLabel, batch_size, classes_count)
-        precision += pre
-        recall += rec
-        
-        accu1, accu2 = accuFun(sess, trData, trLabel, trData_2d, bs)     
-        accu1_all += accu1
-        accu2_all += accu2  
-        logging.info("A1: %g, A2: %g" % (accu1, accu2))
-        print       ("A1: %g, A2: %g" % (accu1, accu2))
-       
-    print precision / num_of_vis_batch * 1.0
-    print recall / num_of_vis_batch * 1.0
-    print accu1_all / num_of_vis_batch * 1.0
-    print accu2_all / num_of_vis_batch * 1.0
-    
     for item in glob.glob(directory + "/*.ply"):
         os.remove(item)
     
-    for i in range(batch_size): 
-        loaded_file = np.load(test_data[i])
-        scene = utils.npy_cutter(loaded_file, scene_shape)
-        trData, trLabel = [], []
+    batch_arr_2d      = []
+    batch_arr = []  
+    name_arr= []
+    
+    counter = 0
+    for item in glob.glob(test_directory + '*.npy'):
+        name_arr.append(str(item[12:]))
+        loaded_file = np.load(item)
+        batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
+        batch_arr_2d.append(np.load('house_2d/' + str(item[12:])) )
+        counter += 1
         
-        scene_2d = batch_arr_2d[i]
-
-        trData   = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
-        trData_2 = scene_2d[ 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]                   # input 
-        trLabel  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
+    batch_arr = np.reshape( batch_arr, ( -1, scene_shape[0], scene_shape[1], scene_shape[2] ))
+    batch_arr_2d = np.reshape( batch_arr_2d, ( -1, scene_shape[0], scene_shape[2] ))
+    trData  = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+    trData_2 = batch_arr_2d[ :, 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ] 
+    trLabel = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt     
+    trData  = np.reshape(trData, (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
+    trData_2 = np.reshape( trData_2, ( -1, scene_shape[0] * halfed_scene_shape )) 
+    
+    score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2, keepProb: 1.0, phase: False})  
+    score  = np.reshape(score, (counter, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count))
+    score  = np.argmax(score, 4) 
+    trData = np.reshape(trData, (-1, scene_shape[0], scene_shape[1], halfed_scene_shape))
+    
+    for i in range(counter):   
+        trData_i = trData[i,:,:,:]
+        trData_i  = np.reshape( trData_i, (scene_shape[0], scene_shape[1], halfed_scene_shape))
         
-        trData      = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
-        trData_2    = np.reshape( trData_2, ( -1, scene_shape[0] * halfed_scene_shape ))  
-        score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2, keepProb: 1.0, phase: False})  
-        score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
-        score       = np.argmax ( score, 3)     
-        score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
-        score       = score[0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape]            
-        trData      = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
+        score_i = score[i,:,:,:]
+        score_i = np.reshape( score_i, (scene_shape[0], scene_shape[1], halfed_scene_shape)) 
         
-        gen_scn = np.concatenate((trData, score), axis=2) 
+        empty_scene = np.zeros((84,44,42))
+        empty_space = np.zeros((scene_shape[0], scene_shape[1], 50)) 
+        empty_scene = np.concatenate((trData_i, empty_scene), axis=2)   
+        empty_scene = np.concatenate((empty_scene, empty_space), axis=2)  
+        gen_scn = np.concatenate((trData_i, score_i), axis=2)  
+        gen_scn = np.concatenate((empty_scene, gen_scn), axis=2)   
+        empty_space = np.zeros((scene_shape[0], scene_shape[1], 50))
+        gen_scn = np.concatenate((gen_scn, empty_space), axis=2) 
+        gen_scn = np.concatenate((gen_scn, batch_arr[i,:,:,:]), axis=2)
         
-        empty_space = np.zeros((10, scene_shape[1], scene_shape[2]))
-        gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
-        gen_scn = np.concatenate((gen_scn, scene), axis=0)
-        
-        output = open( directory + "/" + test_data[i][10:] + ".ply" , 'w') 
+        output = open( directory + "/" + name_arr[i] + ".ply" , 'w') 
         ply       = ""
         numOfVrtc = 0
         for idx1 in range(gen_scn.shape[0]):
@@ -713,12 +687,129 @@ def show_result(sess):
         output.write("property list uchar int vertex_indices"+ "\n")
         output.write("end_header"                            + "\n")
         output.write( ply                                          ) 
-        output.close()
-        logging.info(test_data[i] + ".ply" + " is Done!")
-        print       (test_data[i] + ".ply" + " is Done!") 
+        output.close() 
+        print       (test_data[i][12:] + ".ply" + " is Done!") 
     
-    logging.info("A1: %g, A2: %g" % (accu1, accu2))    
-    print       ("A1: %g, A2: %g" % (accu1, accu2))   
+    batch_arr = []  
+    batch_arr_2d = []
+    name_arr= []
+    counter = 0
+    
+    ###################################################################################################
+    
+    # logging.info("Creating ply files...")
+    # print       ("Creating ply files...")
+    # 
+    # bs = 0  
+    # trData, trLabel   = [], [] 
+    # batch_arr         = []
+    # batch_arr_2d      = []
+    # precision = np.zeros(classes_count)
+    # recall = np.zeros(classes_count)
+    # accu1_all, accu2_all = 0.0, 0.0
+    # 
+    # for counter in range(num_of_vis_batch):
+    #     trData, trLabel   = [], [] 
+    #     batch_arr         = []
+    #     batch_arr_2d      = []
+    #     bs = 0 
+    #     
+    #     test_data = utils.fetch_random_batch(train_directory, batch_size)
+    #     
+    #     for test in test_data:   
+    #         batch_arr_2d.append(np.load(str(test)[:7] + "d" + str(test[7:]))) 
+    #         
+    #         loaded_file = np.load(test)
+    #         batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
+    #         bs += 1   
+    #         
+    #     batch_arr    = np.reshape( batch_arr,    ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
+    #     batch_arr_2d = np.reshape( batch_arr_2d, ( bs, scene_shape[0], scene_shape[2] ))
+    #     trData    = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+    #     trLabel   = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt   
+    #     trData_2d = batch_arr_2d[ :, 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]  # input 
+    #     trData    = np.reshape(trData,    (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
+    #     trData_2d = np.reshape(trData_2d, (-1, scene_shape[0] * halfed_scene_shape))
+    # 
+    #     score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2d, keepProb: 1.0, phase: False})  
+    #     score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
+    #     score       = np.argmax ( score, 4)     
+    #     score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape )) 
+    #     pre, rec    = utils.precision_recall(score, trLabel, batch_size, classes_count)
+    #     precision += pre
+    #     recall += rec
+    #     
+    #     accu1, accu2 = accuFun(sess, trData, trLabel, trData_2d, bs)     
+    #     accu1_all += accu1
+    #     accu2_all += accu2  
+    #     logging.info("A1: %g, A2: %g" % (accu1, accu2))
+    #     print       ("A1: %g, A2: %g" % (accu1, accu2))
+    #    
+    # print precision / num_of_vis_batch * 1.0
+    # print recall / num_of_vis_batch * 1.0
+    # print accu1_all / num_of_vis_batch * 1.0
+    # print accu2_all / num_of_vis_batch * 1.0
+    # 
+    # for item in glob.glob(directory + "/*.ply"):
+    #     os.remove(item)
+    # 
+    # for i in range(batch_size): 
+    #     loaded_file = np.load(test_data[i])
+    #     scene = utils.npy_cutter(loaded_file, scene_shape)
+    #     trData, trLabel = [], []
+    #     
+    #     scene_2d = batch_arr_2d[i]
+    # 
+    #     trData   = scene[ 0:scene_shape[0] , 0:scene_shape[1] , 0:halfed_scene_shape ]               # input 
+    #     trData_2 = scene_2d[ 0:scene_shape[0], halfed_scene_shape:scene_shape[2] ]                   # input 
+    #     trLabel  = scene[ 0:scene_shape[0] , 0:scene_shape[1] , halfed_scene_shape:scene_shape[2] ]  # gt 
+    #     
+    #     trData      = np.reshape( trData, ( -1, scene_shape[0] * scene_shape[1] * halfed_scene_shape ))  
+    #     trData_2    = np.reshape( trData_2, ( -1, scene_shape[0] * halfed_scene_shape ))  
+    #     score,_,_,_ = sess.run( ConvNet_class.score , feed_dict={x_3d: trData, x_2d:trData_2, keepProb: 1.0, phase: False})  
+    #     score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
+    #     score       = np.argmax ( score, 3)     
+    #     score       = np.reshape( score, ( scene_shape[0], scene_shape[1], halfed_scene_shape ))
+    #     score       = score[0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape]            
+    #     trData      = np.reshape( trData, (scene_shape[0], scene_shape[1], halfed_scene_shape))
+    #     
+    #     gen_scn = np.concatenate((trData, score), axis=2) 
+    #     
+    #     empty_space = np.zeros((10, scene_shape[1], scene_shape[2]))
+    #     gen_scn = np.concatenate((gen_scn, empty_space), axis=0)
+    #     gen_scn = np.concatenate((gen_scn, scene), axis=0)
+    #     
+    #     output = open( directory + "/" + test_data[i][10:] + ".ply" , 'w') 
+    #     ply       = ""
+    #     numOfVrtc = 0
+    #     for idx1 in range(gen_scn.shape[0]):
+    #         for idx2 in range(gen_scn.shape[1]): 
+    #             for idx3 in range(gen_scn.shape[2]):  
+    #                 if gen_scn[idx1][idx2][idx3] > 0:  
+    #                     ply = ply + str(idx1)+ " " +str(idx2)+ " " +str(idx3) + str(utils.colors[ int(gen_scn[idx1][idx2][idx3]) ]) + "\n" 
+    #                     numOfVrtc += 1
+    #                     
+    #     output.write("ply"                                   + "\n")
+    #     output.write("format ascii 1.0"                      + "\n")
+    #     output.write("comment VCGLIB generated"              + "\n")
+    #     output.write("element vertex " +  str(numOfVrtc)     + "\n")
+    #     output.write("property float x"                      + "\n")
+    #     output.write("property float y"                      + "\n")
+    #     output.write("property float z"                      + "\n")
+    #     output.write("property uchar red"                    + "\n")
+    #     output.write("property uchar green"                  + "\n")
+    #     output.write("property uchar blue"                   + "\n")
+    #     output.write("property uchar alpha"                  + "\n")
+    #     output.write("element face 0"                        + "\n")
+    #     output.write("property list uchar int vertex_indices"+ "\n")
+    #     output.write("end_header"                            + "\n")
+    #     output.write( ply                                          ) 
+    #     output.close()
+    #     logging.info(test_data[i] + ".ply" + " is Done!")
+    #     print       (test_data[i] + ".ply" + " is Done!") 
+    # 
+    # logging.info("A1: %g, A2: %g" % (accu1, accu2))    
+    # print       ("A1: %g, A2: %g" % (accu1, accu2))   
     
 #===================================================================================================================================================
 
