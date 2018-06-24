@@ -474,7 +474,7 @@ def precision_recall(score, label, batch_size, classes_count):
     
     for i in range(len(tp)):
         precision[i] = (tp[i] / (tp[i] + fp[i])) if (tp[i] + fp[i]) != 0.0 else 0.0
-        recall[i] = (tp[i] / (tp[i] + fn[i])) if (tp[i] + fn[i]) != 0.0 else 0.0
+        recall[i]    = (tp[i] / (tp[i] + fn[i])) if (tp[i] + fn[i]) != 0.0 else 0.0
     
     return precision, recall
     
