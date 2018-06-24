@@ -20,8 +20,8 @@ classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2 
 directory            = 'sscnet_se_hr'
-to_train             = True
-to_restore           = False
+to_train             = False
+to_restore           = True
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -244,6 +244,48 @@ def accuFun(sess, trData, trLabel, batch_size):
 def show_result(sess):  
     logging.info("Creating ply files...")
     print       ("Creating ply files...")
+    #//////////////////////////////////////////////////////////////////////
+    for counter in range(num_of_vis_batch):
+        trData, trLabel   = [], [] 
+        batch_arr         = []
+        batch_arr_2d      = []
+        bs = 0 
+        
+        test_data = utils.fetch_random_batch(train_directory, batch_size)
+        
+        for test in test_data:    
+            loaded_file = np.load(test)
+            batch_arr.append(utils.npy_cutter(loaded_file, scene_shape))
+            bs += 1   
+            
+        batch_arr = np.reshape( batch_arr,    ( bs, scene_shape[0], scene_shape[1], scene_shape[2] ))
+        trData    = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], 0:halfed_scene_shape ]               # input 
+        trLabel   = batch_arr[ :, 0:scene_shape[0], 0:scene_shape[1], halfed_scene_shape:scene_shape[2] ]  # gt   
+        trData    = np.reshape(trData,    (-1, scene_shape[0] * scene_shape[1] * halfed_scene_shape))   
+
+        score       = sess.run( ConvNet_class.score , feed_dict={x: trData, keepProb: 1.0, phase: False})  
+        score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count ))  
+        score       = np.argmax ( score, 4)     
+        score       = np.reshape( score, ( -1, scene_shape[0], scene_shape[1], halfed_scene_shape )) 
+        pre, rec    = utils.precision_recall(score, trLabel, batch_size, classes_count)
+        precision += pre
+        recall += rec
+        
+        accu1, accu2 = accuFun(sess, trData, trLabel, bs)     
+        accu1_all += accu1
+        accu2_all += accu2  
+        logging.info("A1: %g, A2: %g" % (accu1, accu2))
+        print       ("A1: %g, A2: %g" % (accu1, accu2))
+       
+    print precision / num_of_vis_batch * 1.0
+    print recall / num_of_vis_batch * 1.0
+    print accu1_all / num_of_vis_batch * 1.0
+    print accu2_all / num_of_vis_batch * 1.0
+    #//////////////////////////////////////////////////////////////////////
+    sys.exit(0)
+    
+    
+    
     
     bs = 0  
     trData, trLabel = [], [] 
