@@ -140,6 +140,14 @@ class ConvNet(object):
                 
         #---------------------------------------------------------------------------------------------------------------------------------------------
         
+        def d_conv2d(x, w, b, name="d_conv2d", d_rate=1):
+            with tf.name_scope(name): 
+                x = tf.nn.convolution(x, w, padding='SAME', strides=[1,1], dilation_rate=[d_rate, d_rate], name=name)
+                x = tf.nn.bias_add(x, b) 
+                return x 
+                
+        #---------------------------------------------------------------------------------------------------------------------------------------------
+        
         def maxpool2d(x, k=2):
             return tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME')
         
@@ -180,14 +188,14 @@ class ConvNet(object):
         # Residual Block #5
         conv_r5_1 = tf.layers.batch_normalization(tf.nn.relu( merge_4 ))  
         conv_r5_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_1, self.params_w_['w14'], self.params_b_['b14'], "conv_r5_2" ) ))   
-        conv_r5_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_2, self.params_w_['w15'], self.params_b_['b15'], "conv_r5_3" ) )) 
+        conv_r5_3 = tf.layers.batch_normalization(tf.nn.relu( d_conv2d( conv_r5_2, self.params_w_['w15'], self.params_b_['b15'], "conv_r5_3", 2 ) )) 
         conv_r5_4 =                                           conv2d( conv_r5_3, self.params_w_['w16'], self.params_b_['b16'], "conv_r5_4" )   
         merge_5   = tf.add_n([merge_4, conv_r5_4])                                                                        
         
         # Residual Block #6                                                                                               
         conv_r6_1 = tf.layers.batch_normalization(tf.nn.relu( merge_5 ))                                                  
         conv_r6_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_1, self.params_w_['w17'], self.params_b_['b17'], "conv_r6_2" ) ))   
-        conv_r6_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_2, self.params_w_['w18'], self.params_b_['b18'], "conv_r6_3" ) )) 
+        conv_r6_3 = tf.layers.batch_normalization(tf.nn.relu( d_conv2d( conv_r6_2, self.params_w_['w18'], self.params_b_['b18'], "conv_r6_3", 4 ) )) 
         conv_r6_4 =                                           conv2d( conv_r6_3, self.params_w_['w19'], self.params_b_['b19'], "conv_r6_4" )   
         merge_6   = tf.add_n([merge_5, conv_r6_4]) 
         
