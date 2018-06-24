@@ -329,23 +329,23 @@ class ConvNet(object):
         
         # Residual Block #4
         conv_r4_1 = tf.layers.batch_normalization(tf.nn.relu( merge_3 ))  
-        conv_r4_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_1, self.params_cnn_w_['w10'], self.params_cnn_b_['b10'], "conv_r4_2" ) ))   
-        conv_r4_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_2, self.params_cnn_w_['w11'], self.params_cnn_b_['b11'], "conv_r4_3" ) )) 
-        conv_r4_4 =                                           conv2d( conv_r4_3, self.params_cnn_w_['w12'], self.params_cnn_b_['b12'], "conv_r4_4" )   
+        conv_r4_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_1, self.params_cnn_w_['w11'], self.params_cnn_b_['b11'], "conv_r4_2" ) ))   
+        conv_r4_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_2, self.params_cnn_w_['w12'], self.params_cnn_b_['b12'], "conv_r4_3" ) )) 
+        conv_r4_4 =                                           conv2d( conv_r4_3, self.params_cnn_w_['w13'], self.params_cnn_b_['b13'], "conv_r4_4" )   
         merge_4   = tf.add_n([merge_3, conv_r4_4]) 
         
         # Residual Block #5
         conv_r5_1 = tf.layers.batch_normalization(tf.nn.relu( merge_4 ))  
-        conv_r5_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_1, self.params_cnn_w_['w13'], self.params_cnn_b_['b13'], "conv_r5_2" ) ))   
-        conv_r5_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_2, self.params_cnn_w_['w14'], self.params_cnn_b_['b14'], "conv_r5_3" ) )) 
-        conv_r5_4 =                                           conv2d( conv_r5_3, self.params_cnn_w_['w15'], self.params_cnn_b_['b15'], "conv_r5_4" )   
+        conv_r5_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_1, self.params_cnn_w_['w14'], self.params_cnn_b_['b14'], "conv_r5_2" ) ))   
+        conv_r5_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_2, self.params_cnn_w_['w15'], self.params_cnn_b_['b15'], "conv_r5_3" ) )) 
+        conv_r5_4 =                                           conv2d( conv_r5_3, self.params_cnn_w_['w16'], self.params_cnn_b_['b16'], "conv_r5_4" )   
         merge_5   = tf.add_n([merge_4, conv_r5_4]) 
         
         # Residual Block #6
         conv_r6_1 = tf.layers.batch_normalization(tf.nn.relu( merge_5 ))  
-        conv_r6_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_1, self.params_cnn_w_['w16'], self.params_cnn_b_['b16'], "conv_r6_2" ) ))   
-        conv_r6_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_2, self.params_cnn_w_['w17'], self.params_cnn_b_['b17'], "conv_r6_3" ) )) 
-        conv_r6_4 =                                           conv2d( conv_r6_3, self.params_cnn_w_['w18'], self.params_cnn_b_['b18'], "conv_r6_4" )   
+        conv_r6_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_1, self.params_cnn_w_['w17'], self.params_cnn_b_['b17'], "conv_r6_2" ) ))   
+        conv_r6_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_2, self.params_cnn_w_['w18'], self.params_cnn_b_['b18'], "conv_r6_3" ) )) 
+        conv_r6_4 =                                           conv2d( conv_r6_3, self.params_cnn_w_['w19'], self.params_cnn_b_['b19'], "conv_r6_4" )   
         merge_6   = tf.add_n([merge_5, conv_r6_4]) 
         
         se_cnn_out = conv2d(merge_6, self.params_cnn_w_['wOut'], self.params_cnn_b_['bOut'], "conv_out")   
