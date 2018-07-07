@@ -25,8 +25,8 @@ classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2 
 directory            = 'gan_se'
-to_train             = False
-to_restore           = True
+to_train             = True
+to_restore           = False
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -74,7 +74,7 @@ def count_params():
 class ConvNet(object):
 
     def paramsFun(self): 
-        params_w = {
+        params_w_g = {
                     'w1'   : tf.Variable(tf.truncated_normal( [ 7 , 7 , halfed_scene_shape , 64               ], stddev = 0.01 )),  
                     
                     'w2'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64 , 64                               ], stddev = 0.01 )),  
@@ -103,7 +103,7 @@ class ConvNet(object):
                     
                     'wOut' : tf.Variable(tf.truncated_normal( [ 1 , 1 , 64 , classes_count*halfed_scene_shape ], stddev = 0.01 ))
                    } 
-        params_b = {
+        params_b_g = {
                     'b1'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
                     'b2'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )),  
                     'b3'   : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
@@ -125,86 +125,138 @@ class ConvNet(object):
                     'b19'  : tf.Variable(tf.truncated_normal( [ 64                               ], stddev = 0.01 )), 
                     'bOut' : tf.Variable(tf.truncated_normal( [ classes_count*halfed_scene_shape ], stddev = 0.01 ))
                    } 
+        params_w_d = {
+                    'w1'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 30   , 32    ], stddev = 0.01 )),  
+                    'w2'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 32   , 64    ], stddev = 0.01 )),  
+                    'w3'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64   , 128   ], stddev = 0.01 )),
+                    'w4'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128  , 128   ], stddev = 0.01 )),
+                    
+                    'w5'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 60   , 64    ], stddev = 0.01 )),  
+                    'w6'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 64   , 128   ], stddev = 0.01 )),  
+                    'w7'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 128  , 256   ], stddev = 0.01 )),  
+                    'w8'   : tf.Variable(tf.truncated_normal( [ 3 , 3 , 256  , 128   ], stddev = 0.01 )),  
+                    'wOut' : tf.Variable(tf.truncated_normal( [ 4096  , 1            ], stddev = 0.01 ))
+                    } 
+        params_b_d = {
+                    'b1'   : tf.Variable(tf.truncated_normal( [ 32                                ], stddev = 0.01 )),  
+                    'b2'   : tf.Variable(tf.truncated_normal( [ 64                                ], stddev = 0.01 )),  
+                    'b3'   : tf.Variable(tf.truncated_normal( [ 128                               ], stddev = 0.01 )), 
+                    'b4'   : tf.Variable(tf.truncated_normal( [ 128                               ], stddev = 0.01 )), 
+                    'b5'   : tf.Variable(tf.truncated_normal( [ 64                                ], stddev = 0.01 )), 
+                    'b6'   : tf.Variable(tf.truncated_normal( [ 128                               ], stddev = 0.01 )), 
+                    'b7'   : tf.Variable(tf.truncated_normal( [ 256                               ], stddev = 0.01 )), 
+                    'b8'   : tf.Variable(tf.truncated_normal( [ 128                               ], stddev = 0.01 )), 
+                    'bOut' : tf.Variable(tf.truncated_normal( [ 1                               ], stddev = 0.01 )) 
+                   }     
                    
-        return params_w,params_b
+        return params_w_g, params_b_g
 
     #=================================================================================================================================================
-
-    def scoreFun(self): 
     
-        def conv2d(x, w, b, name="conv_biased", strides=1):
-            with tf.name_scope(name):
-                x = tf.nn.conv2d(x, w, strides=[1, strides, strides, 1], padding='SAME')
-                x = tf.nn.bias_add(x, b) 
-                return x  
-                
-        #---------------------------------------------------------------------------------------------------------------------------------------------
-        
-        def d_conv2d(x, w, b, name="d_conv2d", d_rate=1):
-            with tf.name_scope(name): 
-                x = tf.nn.convolution(x, w, padding='SAME', strides=[1,1], dilation_rate=[d_rate, d_rate], name=name)
-                x = tf.nn.bias_add(x, b) 
-                return x 
-                
-        #---------------------------------------------------------------------------------------------------------------------------------------------
-        
-        def maxpool2d(x, k=2):
-            return tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME')
-        
-        #---------------------------------------------------------------------------------------------------------------------------------------------
-        
+    def conv2d(x, w, b, name="conv_biased", strides=1):
+        with tf.name_scope(name):
+            x = tf.nn.conv2d(x, w, strides=[1, strides, strides, 1], padding='SAME')
+            x = tf.nn.bias_add(x, b) 
+            return x  
+            
+    #---------------------------------------------------------------------------------------------------------------------------------------------
+    
+    def lrelu(input, leak=0.2):
+        f1 = 0.5 * (1 + leak)
+        f2 = 0.5 * (1 - leak)
+        return f1 * input + f2 * tf.abs(input)
+    
+    #---------------------------------------------------------------------------------------------------------------------------------------------
+    
+    def d_conv2d(x, w, b, name="d_conv2d", d_rate=1):
+        with tf.name_scope(name): 
+            x = tf.nn.convolution(x, w, padding='SAME', strides=[1,1], dilation_rate=[d_rate, d_rate], name=name)
+            x = tf.nn.bias_add(x, b) 
+            return x 
+            
+    #---------------------------------------------------------------------------------------------------------------------------------------------
+    
+    def maxpool2d(x, k=2):
+        return tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME')
+    
+    #---------------------------------------------------------------------------------------------------------------------------------------------
+    
+    def generator(self):  
         self.x_   = tf.reshape(x, shape = [-1, scene_shape[0], scene_shape[1], halfed_scene_shape]) 
         
-        conv_1    = conv2d( self.x_, self.params_w_['w1'], self.params_b_['b1'], "conv_1" ) 
+        conv_1    = conv2d( self.x_, self.params_w_g_['w1'], self.params_b_g_['b1'], "conv_1" ) 
         
         # Residual Block #1
         conv_r1_1 = tf.layers.batch_normalization(tf.nn.relu( conv_1 )) 
-        conv_r1_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r1_1, self.params_w_['w2'], self.params_b_['b2'], "conv_r1_2" ) ))   
-        conv_r1_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r1_2, self.params_w_['w3'], self.params_b_['b3'], "conv_r1_3" ) )) 
-        conv_r1_4 =                                           conv2d( conv_r1_3, self.params_w_['w4'], self.params_b_['b4'], "conv_r1_4" )  
+        conv_r1_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r1_1, self.params_w_g_['w2'], self.params_b_g_['b2'], "conv_r1_2" ) ))   
+        conv_r1_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r1_2, self.params_w_g_['w3'], self.params_b_g_['b3'], "conv_r1_3" ) )) 
+        conv_r1_4 =                                           conv2d( conv_r1_3, self.params_w_g_['w4'], self.params_b_g_['b4'], "conv_r1_4" )  
         merge_1   = tf.add_n([conv_1, conv_r1_4]) 
         
         # Residual Block #2
         conv_r2_1 = tf.layers.batch_normalization(tf.nn.relu( merge_1 ))  
-        conv_r2_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_1, self.params_w_['w5'], self.params_b_['b5'], "conv_r2_2" ) ))   
-        conv_r2_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_2, self.params_w_['w6'], self.params_b_['b6'], "conv_r2_3" ) )) 
-        conv_r2_4 =                                           conv2d( conv_r2_3, self.params_w_['w7'], self.params_b_['b7'], "conv_r2_4" )  
+        conv_r2_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_1, self.params_w_g_['w5'], self.params_b_g_['b5'], "conv_r2_2" ) ))   
+        conv_r2_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r2_2, self.params_w_g_['w6'], self.params_b_g_['b6'], "conv_r2_3" ) )) 
+        conv_r2_4 =                                           conv2d( conv_r2_3, self.params_w_g_['w7'], self.params_b_g_['b7'], "conv_r2_4" )  
         merge_2   = tf.add_n([merge_1, conv_r2_4])  
         
         # Residual Block #3
         conv_r3_1 = tf.layers.batch_normalization(tf.nn.relu( merge_2 ))  
-        conv_r3_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_1, self.params_w_['w8'],  self.params_b_['b8'],  "conv_r3_2" ) ))   
-        conv_r3_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_2, self.params_w_['w9'],  self.params_b_['b9'],  "conv_r3_3" ) )) 
-        conv_r3_4 =                                           conv2d( conv_r3_3, self.params_w_['w10'], self.params_b_['b10'], "conv_r3_4" )   
+        conv_r3_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_1, self.params_w_g_['w8'],  self.params_b_g_['b8'],  "conv_r3_2" ) ))   
+        conv_r3_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r3_2, self.params_w_g_['w9'],  self.params_b_g_['b9'],  "conv_r3_3" ) )) 
+        conv_r3_4 =                                           conv2d( conv_r3_3, self.params_w_g_['w10'], self.params_b_g_['b10'], "conv_r3_4" )   
         merge_3   = tf.add_n([merge_2, conv_r3_4])  
         
         # Residual Block #4
         conv_r4_1 = tf.layers.batch_normalization(tf.nn.relu( merge_3 ))  
-        conv_r4_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_1, self.params_w_['w11'], self.params_b_['b11'], "conv_r4_2" ) ))   
-        conv_r4_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_2, self.params_w_['w12'], self.params_b_['b12'], "conv_r4_3" ) )) 
-        conv_r4_4 =                                           conv2d( conv_r4_3, self.params_w_['w13'], self.params_b_['b13'], "conv_r4_4" )   
+        conv_r4_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_1, self.params_w_g_['w11'], self.params_b_g_['b11'], "conv_r4_2" ) ))   
+        conv_r4_3 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r4_2, self.params_w_g_['w12'], self.params_b_g_['b12'], "conv_r4_3" ) )) 
+        conv_r4_4 =                                           conv2d( conv_r4_3, self.params_w_g_['w13'], self.params_b_g_['b13'], "conv_r4_4" )   
         merge_4   = tf.add_n([merge_3, conv_r4_4]) 
         
         # Residual Block #5
         conv_r5_1 = tf.layers.batch_normalization(tf.nn.relu( merge_4 ))  
-        conv_r5_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_1, self.params_w_['w14'], self.params_b_['b14'], "conv_r5_2" ) ))   
-        conv_r5_3 = tf.layers.batch_normalization(tf.nn.relu( d_conv2d( conv_r5_2, self.params_w_['w15'], self.params_b_['b15'], "conv_r5_3", 2 ) )) 
-        conv_r5_4 =                                           conv2d( conv_r5_3, self.params_w_['w16'], self.params_b_['b16'], "conv_r5_4" )   
+        conv_r5_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r5_1, self.params_w_g_['w14'], self.params_b_g_['b14'], "conv_r5_2" ) ))   
+        conv_r5_3 = tf.layers.batch_normalization(tf.nn.relu( d_conv2d( conv_r5_2, self.params_w_g_['w15'], self.params_b_g_['b15'], "conv_r5_3", 2 ) )) 
+        conv_r5_4 =                                           conv2d( conv_r5_3, self.params_w_g_['w16'], self.params_b_g_['b16'], "conv_r5_4" )   
         merge_5   = tf.add_n([merge_4, conv_r5_4])                                                                        
         
         # Residual Block #6                                                                                               
         conv_r6_1 = tf.layers.batch_normalization(tf.nn.relu( merge_5 ))                                                  
-        conv_r6_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_1, self.params_w_['w17'], self.params_b_['b17'], "conv_r6_2" ) ))   
-        conv_r6_3 = tf.layers.batch_normalization(tf.nn.relu( d_conv2d( conv_r6_2, self.params_w_['w18'], self.params_b_['b18'], "conv_r6_3", 4 ) )) 
-        conv_r6_4 =                                           conv2d( conv_r6_3, self.params_w_['w19'], self.params_b_['b19'], "conv_r6_4" )   
+        conv_r6_2 = tf.layers.batch_normalization(tf.nn.relu( conv2d( conv_r6_1, self.params_w_g_['w17'], self.params_b_g_['b17'], "conv_r6_2" ) ))   
+        conv_r6_3 = tf.layers.batch_normalization(tf.nn.relu( d_conv2d( conv_r6_2, self.params_w_g_['w18'], self.params_b_g_['b18'], "conv_r6_3", 4 ) )) 
+        conv_r6_4 =                                           conv2d( conv_r6_3, self.params_w_g_['w19'], self.params_b_g_['b19'], "conv_r6_4" )   
         merge_6   = tf.add_n([merge_5, conv_r6_4]) 
         
-        conv_out  = tf.contrib.layers.flatten(conv2d(merge_6, self.params_w_['wOut'], self.params_b_['bOut'], "conv_out"))     
+        conv_out  = tf.contrib.layers.flatten(conv2d(merge_6, self.params_w_g_['wOut'], self.params_b_g_['bOut'], "conv_out"))     
         return conv_out
         
     #---------------------------------------------------------------------------------------------------------------------------------------------------
 
-    def costFun(self): 
+    def discriminator(self):  
+        inputs = tf.reshape( self.s_half, [batch_size, 84, 44, 42] )  
+        h1     = tf.nn.dropout( lrelu( tf.layers.batch_normalization( tf.nn.bias_add( tf.nn.conv2d(inputs, self.params_w_d_['w1'], strides=[1,2,2,1], padding='SAME'),  self.params_b_d_['b1'] ) ) ), keep_prob) 
+        h2     = tf.nn.dropout( lrelu( tf.layers.batch_normalization( tf.nn.bias_add( tf.nn.conv2d(h1,     self.params_w_d_['w2'], strides=[1,2,2,1], padding='SAME'),  self.params_b_d_['b2'] ) ) ), keep_prob) 
+        h3     = tf.nn.dropout( lrelu( tf.layers.batch_normalization( tf.nn.bias_add( tf.nn.conv2d(h2,     self.params_w_d_['w3'], strides=[1,1,1,1], padding='SAME'),  self.params_b_d_['b3'] ) ) ), keep_prob) 
+        h4     = tf.nn.dropout( lrelu( tf.layers.batch_normalization( tf.nn.bias_add( tf.nn.conv2d(h3,     self.params_w_d_['w4'], strides=[1,2,2,1], padding='SAME'),  self.params_b_d_['b4'] ) ) ), keep_prob)  
+
+        self.f_half = tf.reshape( self.f_half, [batch_size, 84, 44, 42] )  
+        self.s_half = tf.reshape( self.s_half, [batch_size, 84, 44, 42] )  
+        inputs = tf.concat ( axis=3,  values=[self.f_half, self.s_half] )   
+        hG1    = tf.nn.dropout( lrelu( tf.layers.batch_normalization( tf.nn.bias_add( tf.nn.conv2d(inputs, self.params_w_d_['w5'], strides=[1,2,2,1], padding='SAME'), self.params_b_d_['b5'] ) ) ), keep_prob) 
+        hG2    = tf.nn.dropout( lrelu( tf.layers.batch_normalization( tf.nn.bias_add( tf.nn.conv2d(hG1,    self.params_w_d_['w6'], strides=[1,2,2,1], padding='SAME'), self.params_b_d_['b6'] ) ) ), keep_prob) 
+        hG3    = tf.nn.dropout( lrelu( tf.layers.batch_normalization( tf.nn.bias_add( tf.nn.conv2d(hG2,    self.params_w_d_['w7'], strides=[1,1,1,1], padding='SAME'), self.params_b_d_['b7'] ) ) ), keep_prob) 
+        hG4    = tf.nn.dropout( lrelu( tf.layers.batch_normalization( tf.nn.bias_add( tf.nn.conv2d(hG3,    self.params_w_d_['w8'], strides=[1,2,2,1], padding='SAME'), self.params_b_d_['b8'] ) ) ), keep_prob)  
+        
+        concat  = tf.concat ( axis=3,  values=[h4, hG4] )  
+        concat  = tf.reshape( concat, [batch_size, -1 ] )      
+        logits  = tf.matmul ( concat, self.params_w_d_['wOut'] ) + self.params_b_d_['bOut'] 
+        
+        return logits 
+
+    #---------------------------------------------------------------------------------------------------------------------------------------------------
+
+    def cost_gen(self): 
         
         def focal_loss(labels, logits, gamma=2.0, alpha=4.0): 
             epsilon = 1.e-9
@@ -229,8 +281,8 @@ class ConvNet(object):
         total = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)) 
         total += tf.reduce_mean(focal_loss(labels, tf.nn.softmax(logits)))
         
-        for w in self.params_w_:
-            total += tf.nn.l2_loss(self.params_w_[w]) * 0.005 
+        for w in self.params_w_g_:
+            total += tf.nn.l2_loss(self.params_w_g_[w]) * 0.005 
             
         # penalty term
         logits       = tf.reshape(self.score, [-1, scene_shape[0], scene_shape[1], halfed_scene_shape, classes_count])
@@ -245,8 +297,13 @@ class ConvNet(object):
         
     #------------------------------------------------------------------------------------------------------------------------------------------------    
     
-    def updateFun(self):
-        return tf.train.AdamOptimizer(learning_rate = self.lr).minimize(self.cost) 
+    def update_gen(self):
+        return tf.train.AdamOptimizer(learning_rate = self.lr).minimize(self.cost_gen) 
+        
+   #--------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    def update_dis(self):
+        return tf.train.AdamOptimizer(learning_rate = self.lr).minimize(self.cost_dis) 
         
    #--------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -257,10 +314,14 @@ class ConvNet(object):
         self.keepProb  = keepProb
         self.phase     = phase 
 
-        [self.params_w_, self.params_b_] = ConvNet.paramsFun(self) # initialization and packing the parameters
-        self.score                       = ConvNet.scoreFun (self) # Computing the score function     
-        self.cost                        = ConvNet.costFun  (self) # Computing the cost function 
-        self.update                      = ConvNet.updateFun(self) # Computing the update function 
+        [self.params_w_g_, self.params_b_g_,
+         self.params_b_d_, self.params_w_d_] = ConvNet.paramsFun(self)  
+        self.generator                       = ConvNet.generator(self)  
+        self.discriminator                   = ConvNet.discriminator(self)       
+        self.cost_gen                            = ConvNet.cost_gen(self)    
+        self.cost_dis                            = ConvNet.cost_dis(self)    
+        self.update_gen                         = ConvNet.update_gen(self)   
+        self.update_dis                        = ConvNet.update_dis(self)   
      
 #=================================================================================================================================================== 
 
