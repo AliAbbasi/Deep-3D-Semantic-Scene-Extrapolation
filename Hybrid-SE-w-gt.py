@@ -22,8 +22,8 @@ classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2  
 directory            = 'hybrid_model_v2'
-to_train             = False
-to_restore           = True
+to_train             = True
+to_restore           = False
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
@@ -886,7 +886,7 @@ if __name__ == '__main__':
             sys.exit(0)
         
         # -------------- train phase --------------
-        step         = 1
+        step         = 0
         train_cost   = []
         valid_cost   = []
         train_accu1  = []
