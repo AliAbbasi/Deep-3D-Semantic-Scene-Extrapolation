@@ -24,22 +24,22 @@ import utils # TODO fix it later
 classes_count        = 14
 scene_shape          = [84, 44, 84]
 halfed_scene_shape   = scene_shape[2] / 2 
-directory            = 'cnn_hr_v3'
-to_train             = False
-to_restore           = True
+directory            = 'cnn_se'
+to_train             = True
+to_restore           = False
 show_accuracy        = True
 show_accuracy_step   = 500
 save_model           = True
 save_model_step      = 1000
 visualize_scene      = True
-visualize_scene_step = 3125
+visualize_scene_step = 5000
 subset_train         = False 
 train_directory      = 'house_2/' 
 test_directory       = 'test_data_2/'
-max_iter             = 50000
+max_iter             = 500000
 learning_rate        = 0.00005
 batch_size           = 32 
-num_of_vis_batch     = 15
+num_of_vis_batch     = 1
 
 logging.basicConfig(filename=str(directory)+'.log', level=logging.DEBUG) 
 
