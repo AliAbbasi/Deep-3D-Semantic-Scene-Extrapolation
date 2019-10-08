@@ -8,9 +8,9 @@ behind a table, this study focuses on extrapolating the available half-scene inf
 ![alt text](https://github.com/AliAbbasi/D3DSSE/blob/master/utils/images/hybrid_architecture.PNG)
 
 #### The GAN model builds from CNN baseline as the generator and two global, local discriminator.
-![alt text](https://github.com/AliAbbasi/D3DSSE/blob/master/utils/images/gan_architecture.PNG)
+![alt text](https://github.com/AliAbbasi/D3DSSE/blob/master/utils/images/gan_architecture.png)
 
 #### Some results from models.
-![alt text](https://github.com/AliAbbasi/D3DSSE/blob/master/utils/images/results_figure.PNG)
+![alt text](https://github.com/AliAbbasi/D3DSSE/blob/master/utils/images/results_figure.png)
 
 Read the full details of models, approaches, results, discussion, limitations in my [MSc thesis](https://drive.google.com/file/d/1D0rpLWZJhU6RCKdt8PkTyVb0mnPBUcBO/view?usp=sharing).
